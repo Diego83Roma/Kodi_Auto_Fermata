@@ -67,6 +67,8 @@ jobs:
           tools/integrate-kodi-into-fermata.sh "$ENGINE_APK" "$KODI_PACKAGE"
 
       - name: Build Kodi Auto Fermata TEST APK
+        env:
+          NO_GS: "true"
         run: |
           set -euo pipefail
           ./gradlew --no-daemon :fermata:assembleAutoRelease \
