@@ -14,3 +14,6 @@
 
 -keepnames class androidx.media3.exoplayer.ExoPlayerImpl { *; }
 -keepnames class androidx.media3.exoplayer.ExoPlayerImplInternal { *; }
+
+# Kodi Java bridge methods are called from the native engine through JNI.
+-keep class org.xbmc.kodi.** { *; }
