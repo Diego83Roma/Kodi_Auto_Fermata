@@ -480,11 +480,16 @@ public class MirrorDisplay {
 			};
 		}
 		var m = landscape ? lMetrics : pMetrics;
-		if (m == null) {
+		final Point size = new Point();
+		defaultDisplay.getRealSize(size);
+		int surfaceWidth = sc.getWidth();
+		int surfaceHeight = sc.getHeight();
+		// Recalculate whenever the phone display or Android Auto surface changes.
+		// This keeps scaling and touch coordinates correct across different devices,
+		// resolutions, densities and rotations instead of relying on cached dimensions.
+		if ((m == null) || !m.matches(size.x, size.y, surfaceWidth, surfaceHeight)) {
 			if (!session.isDoneNotFailed()) return null;
-			final Point size = new Point();
-			defaultDisplay.getRealSize(size);
-			m = new Metrics(size.x, size.y, sc.getWidth(), sc.getHeight());
+			m = new Metrics(size.x, size.y, surfaceWidth, surfaceHeight);
 			if (landscape) lMetrics = m;
 			else pMetrics = m;
 		}
@@ -550,8 +555,16 @@ public class MirrorDisplay {
 		final float x;
 		final float y;
 		final float scale;
+		final float displayWidth;
+		final float displayHeight;
+		final float surfaceWidth;
+		final float surfaceHeight;
 
 		Metrics(float dw, float dh, float sw, float sh) {
+			displayWidth = dw;
+			displayHeight = dh;
+			surfaceWidth = sw;
+			surfaceHeight = sh;
 			var scale = dw / sw;
 			var scaleH = dh / scale;
 			if (scaleH <= sh) {
@@ -565,6 +578,11 @@ public class MirrorDisplay {
 				assert x >= 0f;
 			}
 			this.scale = scale;
+		}
+
+		boolean matches(float dw, float dh, float sw, float sh) {
+			return (displayWidth == dw) && (displayHeight == dh) &&
+					(surfaceWidth == sw) && (surfaceHeight == sh);
 		}
 	}
 

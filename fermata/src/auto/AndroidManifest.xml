@@ -96,7 +96,8 @@
             android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:launchMode="singleInstance" />
+            android:launchMode="singleInstance"
+            android:resizeableActivity="true" />
 
         <service
             android:name="me.aap.fermata.auto.ProjectionService"
