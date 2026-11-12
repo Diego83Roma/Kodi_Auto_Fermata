@@ -78,5 +78,4 @@ jobs:
           name: kodi-auto-fermata-kodi-engine-stage
           path: kodi/*.apk
           if-no-files-found: error
-          if-no-files-found: error
           retention-days: 14
