@@ -1,0 +1,67 @@
+name: Build Kodi ARM64 engine validation
+
+on:
+  push:
+    branches:
+      - kodi-engine-build-01
+    paths:
+      - 'kodi'
+      - 'tools/build-kodi-android.sh'
+      - '.github/workflows/build-kodi-engine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kodi-arm64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout repository and pinned Kodi source
+        uses: actions/checkout@v4
+        with:
+          ref: kodi-engine-build-01
+          submodules: recursive
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autopoint build-essential cmake curl             default-jdk flex gawk gcc g++ git gperf libasound2-dev libass-dev             libavahi-client-dev libavahi-common-dev libbluetooth-dev libbluray-dev             libcap-dev libcdio-dev libcurl4-openssl-dev libdrm-dev libegl1-mesa-dev             libflac-dev libfmt-dev libfontconfig1-dev libfreetype6-dev libfribidi-dev             libgl1-mesa-dev libgles2-mesa-dev libglu1-mesa-dev libgnutls28-dev             libinput-dev libltdl-dev liblzo2-dev libmicrohttpd-dev libmysqlclient-dev             libnfs-dev libogg-dev libpcre3-dev libplist-dev libpulse-dev libshairplay-dev             libsmbclient-dev libspdlog-dev libsqlite3-dev libssl-dev libtag1-dev             libtinyxml-dev libtool libudev-dev libva-dev libvdpau-dev libvorbis-dev             libxkbcommon-dev libxml2-dev libxrandr-dev libxslt1-dev libzstd-dev             unzip zip zlib1g-dev
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK and Kodi NDK
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" "platform-tools" "platforms;android-37" "build-tools;37.0.0" "ndk;28.2.13676358"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+
+      - name: Build pinned Kodi ARM64 and package engine validation APK
+        run: |
+          set -euo pipefail
+          chmod +x tools/build-kodi-android.sh
+          KODI_BUILD_JOBS=4 ./tools/build-kodi-android.sh
+
+      - name: Verify generated Kodi package
+        run: |
+          set -euo pipefail
+          APK="$(find kodi -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$APK"
+          test -s "$APK"
+          echo "Kodi engine validation APK: $APK"
+          ls -lh "$APK"
+
+      - name: Upload Kodi engine validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-arm64-engine-validation
+          path: kodi/*.apk
+          if-no-files-found: error
+          retention-days: 14
