@@ -9,7 +9,8 @@ on:
       - 'tools/integrate-kodi-into-fermata.sh'
       - 'fermata/src/auto/AndroidManifest.xml'
       - 'fermata/src/auto/java/me/aap/fermata/auto/LauncherActivity.java'
-      - 'fermata/src/auto/proguard-rules.pro'
+      - 'proguard-rules.pro'
+      - 'fermata/build.gradle'
   workflow_dispatch:
 
 permissions:
