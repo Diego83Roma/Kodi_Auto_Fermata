@@ -54,17 +54,25 @@ jobs:
           test "$COUNT" -ge 10
           echo "Trovate $COUNT directory di moduli; gdrive resta escluso perché NO_GS=1."
 
-      - name: Build signed modern TEST APK
+      - name: Build modern TEST Android App Bundle
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleAutoRelease -PAPP_ID_SFX=.kodiautomodern -PAPP_NAME="Kodi Auto Fermata TEST" -PABI=arm64-v8a -PNO_GS=true
-          APK="$(find fermata/build/outputs/apk/auto/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          test -n "$APK"
-          cp "$APK" "$RUNNER_TEMP/Kodi-Auto-Fermata-Modern-TEST.apk"
-          APK="$RUNNER_TEMP/Kodi-Auto-Fermata-Modern-TEST.apk"
-          echo "APK=$APK" >> "$GITHUB_ENV"
-          ls -lh "$APK"
+          ./gradlew --no-daemon --stacktrace bundleAutoRelease -PAPP_ID_SFX=.kodiautomodern -PAPP_NAME="Kodi Auto Fermata TEST" -PABI=arm64-v8a -PNO_GS=true
+          AAB="$(find fermata/build/outputs/bundle/autoRelease -maxdepth 1 -type f -name '*.aab' | head -n 1)"
+          test -n "$AAB"
+          echo "AAB=$AAB" >> "$GITHUB_ENV"
+          ls -lh "$AAB"
+
+      - name: Create signed universal TEST APK
+        run: |
+          set -euo pipefail
+          BUNDLETOOL_VERSION="1.18.3"
+          curl --fail --location --retry 3 "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" --output "$RUNNER_TEMP/bundletool.jar"
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --bundle="$AAB" --output="$RUNNER_TEMP/kodiauto-modern.apks" --mode=universal --ks=res/fermata.jks --ks-key-alias=fermata --ks-pass=pass:fermata --key-pass=pass:fermata
+          unzip -p "$RUNNER_TEMP/kodiauto-modern.apks" universal.apk > "$RUNNER_TEMP/Kodi-Auto-Fermata-Modern-TEST.apk"
+          test -s "$RUNNER_TEMP/Kodi-Auto-Fermata-Modern-TEST.apk"
+          ls -lh "$RUNNER_TEMP/Kodi-Auto-Fermata-Modern-TEST.apk"
 
       - name: Verify package, app label and signature
         run: |
