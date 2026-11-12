@@ -233,7 +233,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 		} else {
 			navId = ID_NULL;
-			fragmentId = ID_NULL;
+			fragmentId = (intent != null) ?
+					intent.getIntExtra("kodiauto.open_fragment", ID_NULL) : ID_NULL;
 		}
 
 		AppActivity a = getAppActivity();
