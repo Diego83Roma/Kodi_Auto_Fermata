@@ -1,4 +1,4 @@
-name: Build Kodi Auto Fermata — Kodi ARM64 integration stage
+name: Kodi Auto Fermata — ARM64 engine build
 
 on:
   push:
