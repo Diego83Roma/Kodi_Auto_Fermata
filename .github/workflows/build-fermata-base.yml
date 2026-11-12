@@ -108,9 +108,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kodi-auto-fermata-universal
-          path: |
-            ${{ runner.temp }}/Kodi-Auto-Fermata-universal.apk
-            ${{ runner.temp }}/kodiauto-universal.apks
-            ${{ env.AAB }}
+          path: ${{ runner.temp }}/Kodi-Auto-Fermata-universal.apk
           if-no-files-found: error
           retention-days: 14
