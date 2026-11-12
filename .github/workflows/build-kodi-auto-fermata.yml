@@ -1,0 +1,98 @@
+name: Kodi Auto Fermata — integrated test APK
+
+on:
+  push:
+    branches:
+      - kodi-single-apk-build-10
+    paths:
+      - '.github/workflows/build-kodi-auto-fermata.yml'
+      - 'tools/integrate-kodi-into-fermata.sh'
+      - 'fermata/src/auto/AndroidManifest.xml'
+      - 'fermata/src/auto/java/me/aap/fermata/auto/LauncherActivity.java'
+      - 'fermata/src/auto/proguard-rules.pro'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  integrated-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout Kodi Auto Fermata and pinned Kodi sources
+        uses: actions/checkout@v5
+        with:
+          ref: kodi-single-apk-build-10
+          submodules: recursive
+
+      - name: Download verified Kodi ARM64 engine from Build 9
+        uses: actions/download-artifact@v4
+        with:
+          name: kodi-auto-fermata-kodi-engine-stage
+          path: engine-stage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 43274087955
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          set -euo pipefail
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865"
+          yes | sdkmanager --licenses >/dev/null
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+
+      - name: Prepare integrated Kodi payload
+        run: |
+          set -euo pipefail
+          ENGINE_APK="$(find engine-stage -type f -name '*.apk' | head -n 1)"
+          test -n "$ENGINE_APK"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          KODI_PACKAGE="$("$AAPT" dump badging "$ENGINE_APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n 1)"
+          test -n "$KODI_PACKAGE"
+          echo "Kodi JNI package: $KODI_PACKAGE"
+          chmod +x tools/integrate-kodi-into-fermata.sh
+          tools/integrate-kodi-into-fermata.sh "$ENGINE_APK" "$KODI_PACKAGE"
+
+      - name: Build Kodi Auto Fermata TEST APK
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon :fermata:assembleAutoRelease \
+            -PAPP_ID_SFX=.kodiautotest \
+            -PAPP_NAME="Kodi Auto Fermata TEST" \
+            -PABI=arm64-v8a \
+            -PNO_GS=true
+
+      - name: Verify the single integrated APK
+        run: |
+          set -euo pipefail
+          APK="$(find fermata/build/outputs/apk/auto/release -type f -name '*.apk' | head -n 1)"
+          test -n "$APK"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiautotest'"
+          echo "$BADGING" | grep -F "Kodi Auto Fermata TEST"
+          unzip -l "$APK" | grep -F 'lib/arm64-v8a/libkodi.so'
+          unzip -l "$APK" | grep -F 'assets/addons/'
+          unzip -l "$APK" | grep -F 'org/xbmc/kodi/Main'
+          mkdir -p integrated-output
+          cp "$APK" integrated-output/Kodi-Auto-Fermata-TEST.apk
+          ls -lh integrated-output/Kodi-Auto-Fermata-TEST.apk
+
+      - name: Upload Kodi Auto Fermata TEST
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-auto-fermata-test-build-10
+          path: integrated-output/Kodi-Auto-Fermata-TEST.apk
+          if-no-files-found: error
+          retention-days: 14
