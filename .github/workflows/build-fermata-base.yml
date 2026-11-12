@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - kodi-auto-fermata-modern-ui
+      - kodi-auto-fermata-modern-integration
     paths:
       - 'fermata/**'
       - 'modules/**'
