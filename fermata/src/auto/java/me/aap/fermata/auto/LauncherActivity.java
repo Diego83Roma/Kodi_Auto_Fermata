@@ -66,7 +66,7 @@ import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 public class LauncherActivity extends AppCompatActivity {
 	public static final String INTENT_EXTRA_MODE = "fermata.mirror.mode";
 	private static final Pref<Supplier<String[]>> AA_LAUNCHER_APPS = Pref.sa("AA_LAUNCHER_APPS",
-			() -> new String[]{FermataApplication.get().getPackageName(), "com.android.chrome",
+			() -> new String[]{FermataApplication.get().getPackageName(), FermataApplication.get().getPackageName() + "#kodi", "com.android.chrome",
 					"com.google.android.gm", "com.google.android.apps.maps", "com.google.android.youtube"});
 	private static LauncherActivity activeInstance;
 
@@ -188,6 +188,10 @@ public class LauncherActivity extends AppCompatActivity {
 			var exitApp = AppInfo.EXIT.pkg + '#' + AppInfo.EXIT.name;
 
 			for (var app : selectedApps) {
+				if (app.equals(AppInfo.KODI.pkg + '#' + AppInfo.KODI.name)) {
+					apps.add(AppInfo.KODI);
+					continue;
+				}
 				for (var info : allApps) {
 					var pkg = info.activityInfo.packageName;
 					if (app.equals(addApp)) {
@@ -262,6 +266,8 @@ public class LauncherActivity extends AppCompatActivity {
 					new AppInfo(FermataApplication.get().getPackageName(), "back", null, null);
 			private static final AppInfo EXIT =
 					new AppInfo(FermataApplication.get().getPackageName(), "exit", null, null);
+			private static final AppInfo KODI =
+					new AppInfo(FermataApplication.get().getPackageName(), "kodi", "Kodi", null);
 			final String pkg;
 			final String name;
 			final String label;
@@ -365,7 +371,12 @@ public class LauncherActivity extends AppCompatActivity {
 						icon.setImageDrawable(exitIcon);
 						text.setText(getContext().getString(R.string.exit));
 					} else {
-						icon.setImageDrawable(appInfo.icon());
+						if (appInfo.equals(AppInfo.KODI)) {
+							icon.setImageResource(R.drawable.launcher);
+						} else {
+							icon.setImageDrawable(appInfo.icon());
+						}
+						// 
 						text.setText(appInfo.label);
 					}
 					if (appInfo instanceof SelectAppInfo sai) {
@@ -413,6 +424,16 @@ public class LauncherActivity extends AppCompatActivity {
 
 				if (appInfo.equals(AppInfo.EXIT)) {
 					MirrorDisplay.close();
+				} else if (appInfo.equals(AppInfo.KODI)) {
+					try {
+						var intent = new Intent();
+						intent.setClassName(getContext(), "org.xbmc.kodi.Splash");
+						intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+						getContext().startActivity(intent);
+						MirrorDisplay.disableAccelRotation();
+					} catch (Exception err) {
+						Toast.makeText(getContext(), err.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+					}
 				} else if (appInfo.equals(AppInfo.ADD)) {
 					var pm = getContext().getPackageManager();
 					var allApps = loadAllAppList(pm);
