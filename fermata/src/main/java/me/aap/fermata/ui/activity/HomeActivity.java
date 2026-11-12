@@ -399,13 +399,6 @@ public class HomeActivity extends AppCompatActivity {
             getSharedPreferences("addon_manager", MODE_PRIVATE).edit()
                     .putStringSet("repositories", new java.util.HashSet<>(repositories)).apply();
         }
-        if (false) {
-            new AlertDialog.Builder(this).setTitle("Nessun repository")
-                    .setMessage("Aggiungi prima l'indirizzo di un repository Kodi.")
-                    .setPositiveButton("Aggiungi", (d, w) -> manageRepositories())
-                    .setNegativeButton("Chiudi", null).show();
-            return;
-        }
         Toast.makeText(this, "Aggiornamento cataloghi Kodi…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             List<KodiRepositoryClient.Addon> all = new ArrayList<>();
