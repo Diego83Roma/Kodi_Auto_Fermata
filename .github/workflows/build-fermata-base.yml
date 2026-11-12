@@ -49,6 +49,21 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon --stacktrace assembleAutoRelease -PAPP_ID_SFX=.kodiauto
 
+      - name: Verify APK identity and signature
+        run: |
+          set -euo pipefail
+          APK="$(find fermata/build/outputs/apk/auto/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiauto'"
+          echo "$BADGING" | grep -F "application-label:'Kodi Auto Fermata'"
+          "$APKSIGNER" verify --verbose "$APK"
+          echo "APK verificato: package separato e firma valida."
+
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
