@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   integrated-apk:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -125,5 +126,82 @@ jobs:
         with:
           name: kodi-auto-fermata-test-build-10
           path: integrated-output/Kodi-Auto-Fermata-TEST.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  diagnose-install:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download known-working Build 16
+        uses: actions/download-artifact@v4
+        with:
+          name: kodi-auto-fermata-universal
+          path: reference
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 43222222770
+
+      - name: Download rejected Build 18
+        uses: actions/download-artifact@v4
+        with:
+          name: kodi-auto-fermata-test-build-10
+          path: candidate
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 43303140946
+
+      - name: Install Android inspection tools
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses
+          set -o pipefail
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Compare install metadata and manifests
+        run: |
+          set -euo pipefail
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          REF="$(find reference -type f -name '*.apk' | head -n 1)"
+          TEST="$(find candidate -type f -name '*.apk' | head -n 1)"
+          test -n "$REF" && test -n "$TEST"
+          mkdir -p diagnostics
+          for item in "BUILD16:$REF" "BUILD18:$TEST"; do
+            label="${item%%:*}"
+            apk="${item#*:}"
+            echo "=== $label BADGING ==="
+            "$AAPT" dump badging "$apk" | tee "diagnostics/$label-badging.txt"
+            echo "=== $label SIGNATURE ==="
+            "$APKSIGNER" verify --verbose --print-certs "$apk" | tee "diagnostics/$label-signature.txt"
+            "$AAPT" dump xmltree "$apk" AndroidManifest.xml > "diagnostics/$label-manifest.txt"
+            unzip -Z1 "$apk" | sort > "diagnostics/$label-entries.txt"
+          done
+          echo "=== MANIFEST DIFFERENCE ==="
+          diff -u diagnostics/BUILD16-manifest.txt diagnostics/BUILD18-manifest.txt > diagnostics/manifest.diff || true
+          sed -n '1,300p' diagnostics/manifest.diff
+          echo "=== PACKAGE / SDK / SIGNER ==="
+          grep -E "^(package:|sdkVersion:|targetSdkVersion:|native-code:)" diagnostics/BUILD16-badging.txt
+          grep -E "^(package:|sdkVersion:|targetSdkVersion:|native-code:)" diagnostics/BUILD18-badging.txt
+          grep -E "certificate SHA-256 digest|Verified using v2|Number of signers" diagnostics/BUILD16-signature.txt
+          grep -E "certificate SHA-256 digest|Verified using v2|Number of signers" diagnostics/BUILD18-signature.txt
+          echo "=== APK CONTENTS ==="
+          wc -l diagnostics/BUILD16-entries.txt diagnostics/BUILD18-entries.txt
+          for item in "BUILD16:$REF" "BUILD18:$TEST"; do
+            label="${item%%:*}"
+            apk="${item#*:}"
+            echo "--- $label DEX ---"
+            unzip -Z1 "$apk" | grep -E '^classes([0-9]+)?[.]dex$' || true
+            echo "--- $label NATIVE ---"
+            unzip -Z1 "$apk" | grep '^lib/arm64-v8a/' | head -n 60 || true
+          done
+
+      - name: Upload diagnostic comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-auto-fermata-install-diagnostics
+          path: diagnostics/
           if-no-files-found: error
           retention-days: 14
