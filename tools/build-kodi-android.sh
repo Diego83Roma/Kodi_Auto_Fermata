@@ -8,7 +8,7 @@ KODI_SRC="$ROOT/kodi"
 ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 : "${ANDROID_SDK_ROOT:?Set ANDROID_SDK_ROOT to the Android SDK directory}"
 
-if [[ ! -f "$KODI_SRC/CMakeLists.txt" || ! -f "$KODI_SRC/tools/depends/Makefile.include" ]]; then
+if [[ ! -f "$KODI_SRC/CMakeLists.txt" || ! -f "$KODI_SRC/tools/depends/Makefile.include.in" ]]; then
   echo "Kodi submodule is missing or incomplete. Run: git submodule update --init --recursive kodi" >&2
   exit 2
 fi
