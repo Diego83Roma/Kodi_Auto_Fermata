@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -69,12 +71,28 @@ public class HomeActivity extends AppCompatActivity {
         scroll.setFillViewport(true);
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(28), dp(20), dp(24));
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int sidePadding = screenWidth >= dp(900) ? dp(48) : dp(20);
+        root.setPadding(sidePadding, dp(24), sidePadding, dp(24));
         root.setBackgroundColor(BG);
-        scroll.addView(root);
+        FrameLayout frame = new FrameLayout(this);
+        int contentWidth = Math.min(dp(980), Math.max(dp(280), screenWidth - dp(32)));
+        FrameLayout.LayoutParams contentLp = new FrameLayout.LayoutParams(contentWidth, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        frame.addView(root, contentLp);
+        scroll.addView(frame, new ScrollView.LayoutParams(-1, -2));
         setContentView(scroll);
 
-        TextView brand = text("KODI AUTO", 13, Color.rgb(89, 180, 255), true);
+        int logoId = getResources().getIdentifier("kodiauto_original_logo", "drawable", getPackageName());
+        if (logoId != 0) {
+            ImageView logo = new ImageView(this);
+            logo.setImageResource(logoId);
+            logo.setContentDescription("Logo Kodi Auto Fermata");
+            logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams logoLp = lp(dp(76), dp(76));
+            logoLp.bottomMargin = dp(12);
+            root.addView(logo, logoLp);
+        }
+        TextView brand = text("KODI AUTO FERMATA", 13, Color.rgb(89, 180, 255), true);
         brand.setLetterSpacing(0.18f);
         root.addView(brand);
         TextView title = text("Fermata", 34, Color.WHITE, true);
@@ -107,9 +125,83 @@ public class HomeActivity extends AppCompatActivity {
         addTile("I miei Add-on", "Pacchetti installati", "Visualizza gli add-on importati", this::showInstalled);
         addTile("Repository", "Sorgenti di pacchetti", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
 
+        addSection("APP E PREFERENZE");
+        addTile("Impostazioni", "Interfaccia, compatibilità e gestione", "Apri le impostazioni di Kodi Auto Fermata", this::showSettings);
+
         TextView note = text("Kodi Auto Fermata · nuova interfaccia in sviluppo", 12, Color.rgb(126, 142, 164), false);
         LinearLayout.LayoutParams noteLp = lp(-1, -2); noteLp.topMargin = dp(22);
         root.addView(note, noteLp);
+    }
+
+    private void showSettings() {
+        String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Add-on e repository", "Archiviazione", "Informazioni"};
+        new AlertDialog.Builder(this).setTitle("Impostazioni Kodi Auto Fermata")
+                .setItems(sections, (dialog, which) -> {
+                    switch (which) {
+                        case 0: showInterfaceSettings(); break;
+                        case 1: showResizeInfo(); break;
+                        case 2: showPlaybackSettings(); break;
+                        case 3: showAddonSettings(); break;
+                        case 4: showStorageInfo(); break;
+                        default: showAbout(); break;
+                    }
+                }).setNegativeButton("Chiudi", null).show();
+    }
+
+    private void showInterfaceSettings() {
+        final String[] sizes = {"Compatta", "Normale", "Grande"};
+        int current = getSharedPreferences("ui_settings", MODE_PRIVATE).getInt("scale", 1);
+        new AlertDialog.Builder(this).setTitle("Dimensione interfaccia")
+                .setSingleChoiceItems(sizes, current, (d, which) -> {
+                    getSharedPreferences("ui_settings", MODE_PRIVATE).edit().putInt("scale", which).apply();
+                    d.dismiss();
+                    Toast.makeText(this, "Dimensione salvata. Si applica alla prossima apertura.", Toast.LENGTH_SHORT).show();
+                }).setNegativeButton("Annulla", null).show();
+    }
+
+    private void showResizeInfo() {
+        new AlertDialog.Builder(this).setTitle("Adattamento automatico")
+                .setMessage("Attivo: la schermata usa la larghezza disponibile, limita la larghezza massima sui display grandi e si adatta a orientamento e dimensioni dello schermo. L'attività supporta il ridimensionamento Android.")
+                .setPositiveButton("OK", null).show();
+    }
+
+    private void showPlaybackSettings() {
+        new AlertDialog.Builder(this).setTitle("Riproduzione")
+                .setMessage("Le impostazioni del motore di riproduzione restano quelle gestite da Fermata. Le opzioni avanzate saranno esposte qui quando collegate direttamente al player, senza controlli fittizi.")
+                .setPositiveButton("Apri Fermata", (d, w) -> startActivity(new Intent(this, MainActivity.class)))
+                .setNegativeButton("Chiudi", null).show();
+    }
+
+    private void showAddonSettings() {
+        new AlertDialog.Builder(this).setTitle("Add-on e repository")
+                .setItems(new String[]{"I miei Add-on", "Gestisci Repository", "Installa da ZIP"}, (d, which) -> {
+                    if (which == 0) showInstalled();
+                    else if (which == 1) manageRepositories();
+                    else pickZip();
+                }).setNegativeButton("Chiudi", null).show();
+    }
+
+    private void showStorageInfo() {
+        File dir = new File(getFilesDir(), "addons");
+        String value = android.text.format.Formatter.formatShortFileSize(this, directorySize(dir));
+        new AlertDialog.Builder(this).setTitle("Archiviazione")
+                .setMessage("Spazio occupato dai pacchetti Add-on importati: " + value + "\nI dati e la cache di Fermata sono gestiti separatamente.")
+                .setPositiveButton("OK", null).show();
+    }
+
+    private long directorySize(File file) {
+        if (file == null || !file.exists()) return 0;
+        if (file.isFile()) return file.length();
+        long size = 0;
+        File[] children = file.listFiles();
+        if (children != null) for (File child : children) size += directorySize(child);
+        return size;
+    }
+
+    private void showAbout() {
+        new AlertDialog.Builder(this).setTitle("Kodi Auto Fermata")
+                .setMessage("Interfaccia moderna in sviluppo\nVersione di prova")
+                .setPositiveButton("OK", null).show();
     }
 
     private void addSection(String title) {
@@ -270,6 +362,10 @@ public class HomeActivity extends AppCompatActivity {
         f.delete();
     }
 
-    private int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
+    private int dp(int v) {
+        int scale = getSharedPreferences("ui_settings", MODE_PRIVATE).getInt("scale", 1);
+        float factor = scale == 0 ? 0.90f : (scale == 2 ? 1.12f : 1.0f);
+        return (int)(v * getResources().getDisplayMetrics().density * factor + 0.5f);
+    }
     private LinearLayout.LayoutParams lp(int w, int h) { return new LinearLayout.LayoutParams(w, h); }
 }
