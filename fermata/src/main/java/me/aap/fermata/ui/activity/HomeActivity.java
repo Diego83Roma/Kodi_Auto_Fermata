@@ -12,6 +12,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.ImageView;
 import android.widget.FrameLayout;
 import android.widget.ScrollView;
@@ -22,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import me.aap.fermata.R;
+import me.aap.fermata.addon.KodiRepositoryClient;
 
 import org.json.JSONObject;
 
@@ -127,7 +132,8 @@ public class HomeActivity extends AppCompatActivity {
         addSection("ADD-ON E REPOSITORY");
         addTile("Installa da ZIP", "Aggiungi un pacchetto compatibile", "Seleziona un file ZIP dalla memoria", this::pickZip);
         addTile("I miei Add-on", "Pacchetti installati", "Visualizza gli add-on importati", this::showInstalled);
-        addTile("Repository", "Sorgenti di pacchetti", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
+        addTile("Repository", "Sorgenti Kodi", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
+        addTile("Catalogo Kodi", "Ricerca add-on nei repository", "Aggiorna e cerca nel catalogo Kodi", this::browseKodiCatalog);
 
         addSection("WEB E VIDEO");
         addTile("Web Browser", "Navigazione web integrata", "Apri il browser di Fermata", () -> openBuiltInAddon(R.id.web_browser_fragment));
@@ -356,22 +362,126 @@ public class HomeActivity extends AppCompatActivity {
         List<String> repos = new ArrayList<>(prefs.getStringSet("repositories", new java.util.HashSet<>()));
         String current = android.text.TextUtils.join("\n", repos);
         EditText input = new EditText(this);
-        input.setHint("https://esempio.it/repository.json");
+        input.setHint("https://host/percorso/addons.xml.gz");
         input.setText(current);
         input.setMinLines(3);
-        new AlertDialog.Builder(this).setTitle("Repository")
-                .setMessage("Inserisci un indirizzo HTTPS per riga. In questa prima versione gli indirizzi vengono salvati; il catalogo remoto sarà attivato nel passaggio successivo.")
+        new AlertDialog.Builder(this).setTitle("Repository Kodi")
+                .setMessage("Inserisci un indirizzo HTTPS per riga. Puoi indicare direttamente addons.xml / addons.xml.gz oppure la cartella che contiene il catalogo. Il catalogo verrà scaricato e indicizzato.")
                 .setView(input)
                 .setNegativeButton("Annulla", null)
-                .setPositiveButton("Salva", (d,w) -> {
-                    java.util.Set<String> values = new java.util.HashSet<>();
-                    for (String line : input.getText().toString().split("\\n")) {
-                        String u = line.trim();
-                        if (u.startsWith("https://")) values.add(u);
+                .setNeutralButton("Cerca", (d, w) -> {
+                    saveRepositories(input.getText().toString());
+                    browseKodiCatalog();
+                })
+                .setPositiveButton("Salva", (d,w) -> saveRepositories(input.getText().toString()))
+                .show();
+    }
+
+    private void saveRepositories(String raw) {
+        java.util.Set<String> values = new java.util.HashSet<>();
+        for (String line : raw.split("\\n")) {
+            String u = line.trim();
+            if (u.startsWith("https://")) values.add(u);
+        }
+        getSharedPreferences("addon_manager", MODE_PRIVATE).edit()
+                .putStringSet("repositories", values).apply();
+        Toast.makeText(this, "Repository salvati: " + values.size(), Toast.LENGTH_SHORT).show();
+    }
+
+    private void browseKodiCatalog() {
+        java.util.Set<String> saved = getSharedPreferences("addon_manager", MODE_PRIVATE)
+                .getStringSet("repositories", new java.util.HashSet<>());
+        List<String> repositories = new ArrayList<>(saved);
+        if (repositories.isEmpty()) {
+            new AlertDialog.Builder(this).setTitle("Nessun repository")
+                    .setMessage("Aggiungi prima l'indirizzo di un repository Kodi.")
+                    .setPositiveButton("Aggiungi", (d, w) -> manageRepositories())
+                    .setNegativeButton("Chiudi", null).show();
+            return;
+        }
+        Toast.makeText(this, "Aggiornamento cataloghi Kodi…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            List<KodiRepositoryClient.Addon> all = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+            for (String repository : repositories) {
+                try {
+                    all.addAll(KodiRepositoryClient.load(repository));
+                } catch (Exception e) {
+                    errors.add(repository + ": " + (e.getMessage() == null ? "errore di lettura" : e.getMessage()));
+                }
+            }
+            java.util.Map<String, KodiRepositoryClient.Addon> unique = new java.util.LinkedHashMap<>();
+            for (KodiRepositoryClient.Addon addon : all) unique.put(addon.id, addon);
+            List<KodiRepositoryClient.Addon> catalog = new ArrayList<>(unique.values());
+            catalog.sort((a, b) -> a.name.compareToIgnoreCase(b.name));
+            runOnUiThread(() -> {
+                if (catalog.isEmpty()) {
+                    String message = errors.isEmpty() ? "I repository non contengono add-on leggibili." :
+                            android.text.TextUtils.join("\n\n", errors);
+                    new AlertDialog.Builder(this).setTitle("Catalogo non disponibile")
+                            .setMessage(message).setPositiveButton("OK", null).show();
+                } else {
+                    showKodiSearch(catalog, errors);
+                }
+            });
+        }).start();
+    }
+
+    private void showKodiSearch(List<KodiRepositoryClient.Addon> catalog, List<String> errors) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(8), dp(18), dp(8));
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setHint("Cerca per nome, ID o categoria…");
+        content.addView(search, lp(-1, -2));
+        TextView count = text(catalog.size() + " add-on trovati", 12, Color.rgb(150, 170, 195), false);
+        LinearLayout.LayoutParams countLp = lp(-1, -2);
+        countLp.topMargin = dp(6);
+        content.addView(count, countLp);
+        ListView list = new ListView(this);
+        LinearLayout.LayoutParams listLp = lp(-1, dp(420));
+        listLp.topMargin = dp(8);
+        content.addView(list, listLp);
+        ArrayAdapter<KodiRepositoryClient.Addon> adapter = new ArrayAdapter<>(
+                this, android.R.layout.simple_list_item_1, new ArrayList<>(catalog));
+        list.setAdapter(adapter);
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Catalogo Kodi")
+                .setView(content).setNegativeButton("Chiudi", null).create();
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int countValue) {
+                String query = s.toString().trim().toLowerCase(java.util.Locale.ROOT);
+                List<KodiRepositoryClient.Addon> filtered = new ArrayList<>();
+                for (KodiRepositoryClient.Addon addon : catalog) {
+                    if (addon.name.toLowerCase(java.util.Locale.ROOT).contains(query)
+                            || addon.id.toLowerCase(java.util.Locale.ROOT).contains(query)
+                            || addon.type.toLowerCase(java.util.Locale.ROOT).contains(query)
+                            || addon.summary.toLowerCase(java.util.Locale.ROOT).contains(query)) {
+                        filtered.add(addon);
                     }
-                    prefs.edit().putStringSet("repositories", values).apply();
-                    Toast.makeText(this, "Repository salvati: " + values.size(), Toast.LENGTH_SHORT).show();
-                }).show();
+                }
+                adapter.clear();
+                adapter.addAll(filtered);
+                count.setText(filtered.size() + " risultati · " + catalog.size() + " add-on indicizzati");
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            KodiRepositoryClient.Addon addon = adapter.getItem(position);
+            if (addon == null) return;
+            String details = "ID: " + addon.id + "\nVersione: " + addon.version
+                    + "\nTipo: " + addon.type + "\nAutore: " + addon.provider
+                    + "\n\n" + (addon.summary.isEmpty() ? "" : addon.summary + "\n\n")
+                    + addon.description
+                    + "\n\nPacchetto trovato nel repository. L'esecuzione degli add-on Kodi richiede ancora il runtime Kodi e non è attiva in questa versione.";
+            new AlertDialog.Builder(this).setTitle(addon.name).setMessage(details)
+                    .setPositiveButton("OK", null).show();
+        });
+        dialog.show();
+        if (!errors.isEmpty()) {
+            Toast.makeText(this, "Catalogo parziale: " + errors.size() + " repository non letti", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void deleteTree(File f) {
