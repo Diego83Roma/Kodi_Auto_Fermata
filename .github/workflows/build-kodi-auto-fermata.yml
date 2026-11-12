@@ -104,7 +104,10 @@ jobs:
           echo "$BADGING" | grep -F "Kodi Auto Fermata TEST"
           unzip -l "$APK" | grep -F 'lib/arm64-v8a/libkodi.so'
           unzip -l "$APK" | grep -F 'assets/addons/'
-          unzip -l "$APK" | grep -F 'org/xbmc/kodi/Main'
+          # Java/Kotlin classes are stored in DEX files, not as .class/.java paths.
+          unzip -l "$APK" | grep -E 'classes([0-9]+)?\\.dex'
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Main'
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Splash'
           mkdir -p integrated-output
           cp "$APK" integrated-output/Kodi-Auto-Fermata-TEST.apk
           ls -lh integrated-output/Kodi-Auto-Fermata-TEST.apk
