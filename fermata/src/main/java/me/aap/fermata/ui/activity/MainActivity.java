@@ -109,6 +109,10 @@ public class MainActivity extends SplitCompatActivityBase
 		getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 			@Override
 			public void handleOnBackPressed() {
+				if (getIntent().getBooleanExtra("kodiauto.modern_host", false)) {
+					finish();
+					return;
+				}
 				getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
 			}
 		});
