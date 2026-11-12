@@ -38,7 +38,7 @@ jobs:
 
       - name: Install Android SDK packages
         run: |
-          set -euo pipefail
+          set -eu
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
           yes | "$SDKMANAGER" --licenses
           "$SDKMANAGER" "platform-tools"
