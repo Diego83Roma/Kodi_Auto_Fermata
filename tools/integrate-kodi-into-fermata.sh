@@ -51,7 +51,9 @@ for source in src_root.rglob("*.java.in"):
     code = code.replace("@APP_PACKAGE@", package)
     code = code.replace("@APP_NAME@", "Kodi Auto Fermata")
     code = code.replace("@APP_NAME_LC@", "kodi")
-    code = re.sub(r"R\.(string|layout|id|drawable|xml|array|style|styleable|mipmap)\.([A-Za-z0-9_]+)",
+    code = code.replace("import " + package + ".R;", "import me.aap.fermata.R;")
+    code = code.replace("Manifest.permission.ACCESS_LOCAL_NETWORK", '"android.permission.ACCESS_LOCAL_NETWORK"')
+    code = re.sub(r"(?<!android\.)\bR\.(string|layout|id|drawable|xml|array|style|styleable|mipmap|color)\.([A-Za-z0-9_]+)",
                   lambda m: "R.%s.kodi_%s" % (m.group(1), m.group(2)), code)
     if "R." in code and "import me.aap.fermata.R;" not in code:
         code = re.sub(r"^(package [^;]+;\s*)", r"\1\nimport me.aap.fermata.R;\n", code, count=1, flags=re.M)
@@ -59,7 +61,7 @@ for source in src_root.rglob("*.java.in"):
 
 # Namespace every Kodi resource to avoid collisions with Fermata's resource table.
 def prefixed_refs(text):
-    for kind in ("string", "layout", "drawable", "xml", "id", "array", "style", "mipmap"):
+    for kind in ("string", "layout", "drawable", "xml", "id", "array", "style", "mipmap", "color"):
         text = re.sub(r"(@(?:\+)?%s/)([A-Za-z0-9_]+)" % kind,
                       lambda m: m.group(1) + "kodi_" + m.group(2), text)
     return text
@@ -88,6 +90,14 @@ strings = prefixed_refs(strings)
 values = res_root / "values"
 values.mkdir(parents=True, exist_ok=True)
 (values / "kodi_strings.xml").write_text(strings, encoding="utf-8")
+
+# Kodi colors and theme resources are separate from strings.xml.in.
+colors_template = template / "colors.xml.in"
+if colors_template.exists():
+    colors = colors_template.read_text(encoding="utf-8")
+    colors = re.sub(r'name="([^"]+)"', lambda m: 'name="kodi_' + m.group(1) + '"', colors)
+    colors = prefixed_refs(colors)
+    (values / "kodi_colors.xml").write_text(colors, encoding="utf-8")
 
 # Required Kodi layouts and provider/search metadata.
 for name in ("activity_main.xml", "activity_splash.xml", "result.xml", "search_result.xml"):
