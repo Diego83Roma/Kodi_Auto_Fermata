@@ -201,6 +201,7 @@ public class HomeActivity extends AppCompatActivity {
             }
             if (meta == null) throw new Exception("Manca addon.json: questo ZIP non usa il formato Kodi Auto Fermata");
             try (FileOutputStream manifestOut = new FileOutputStream(new File(staging, "addon.json"))) { manifestOut.write(meta.toString(2).getBytes("UTF-8")); }
+            if (meta.optInt("manifestVersion", 1) != 1) throw new Exception("Versione del manifest addon non supportata");
             String id = meta.optString("id", "");
             String name = meta.optString("name", "");
             String version = meta.optString("version", "1.0");
