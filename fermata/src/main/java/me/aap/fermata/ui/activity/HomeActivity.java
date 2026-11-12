@@ -21,6 +21,8 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import me.aap.fermata.R;
+
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -125,12 +127,22 @@ public class HomeActivity extends AppCompatActivity {
         addTile("I miei Add-on", "Pacchetti installati", "Visualizza gli add-on importati", this::showInstalled);
         addTile("Repository", "Sorgenti di pacchetti", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
 
+        addSection("WEB E VIDEO");
+        addTile("Web Browser", "Navigazione web integrata", "Apri il browser di Fermata", () -> openBuiltInAddon(R.id.web_browser_fragment));
+        addTile("YouTube", "Video e canali YouTube", "Apri YouTube integrato in Fermata", () -> openBuiltInAddon(R.id.youtube_fragment));
+
         addSection("APP E PREFERENZE");
         addTile("Impostazioni", "Interfaccia, compatibilità e gestione", "Apri le impostazioni di Kodi Auto Fermata", this::showSettings);
 
         TextView note = text("Kodi Auto Fermata · nuova interfaccia in sviluppo", 12, Color.rgb(126, 142, 164), false);
         LinearLayout.LayoutParams noteLp = lp(-1, -2); noteLp.topMargin = dp(22);
         root.addView(note, noteLp);
+    }
+
+    private void openBuiltInAddon(int fragmentId) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("kodiauto.open_fragment", fragmentId);
+        startActivity(intent);
     }
 
     private void showSettings() {
