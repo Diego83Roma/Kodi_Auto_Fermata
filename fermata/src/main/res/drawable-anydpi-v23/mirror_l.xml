@@ -1,38 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#F5B82E"
-        android:strokeColor="#7A3E08"
-        android:strokeWidth="1.5"
-        android:pathData="M17,19 L31,31 L43,12 L54,30 L68,12 L78,31 L92,19 L86,48 L23,48 Z" />
-    <path
-        android:fillColor="#D88916"
-        android:pathData="M22,43 L87,43 L84,51 L25,51 Z" />
-    <path
-        android:fillColor="#27B9F4"
-        android:pathData="M54,17 L59,25 L54,31 L49,25 Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#07182D"
-        android:strokeWidth="17"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M54,56 C54,69 39,80 29,103" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="12"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M54,56 C54,69 39,80 29,103" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#F5B82E"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:pathData="M54,61 C53,72 42,84 35,99" />
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/kodiauto_original_logo"
+    android:gravity="center"
+    android:filter="true" />
