@@ -98,6 +98,13 @@
             android:theme="@android:style/Theme.Material.NoActionBar" />
 
         <activity
+            android:name="org.xbmc.kodi.RestartActivity"
+            android:exported="false"
+            android:process=":kodi_restart"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
+        <activity
             android:name="org.xbmc.kodi.Main"
             android:exported="false"
             android:configChanges="orientation|keyboard|keyboardHidden|navigation|touchscreen|screenLayout|screenSize|colorMode"
@@ -122,6 +129,67 @@
             android:exported="true"
             android:launchMode="singleInstance"
             android:resizeableActivity="true" />
+
+        <provider
+            android:name="org.xbmc.kodi.content.XBMCMediaContentProvider"
+            android:authorities="org.xbmc.kodi.media"
+            android:exported="true" />
+        <provider
+            android:name="org.xbmc.kodi.content.XBMCFileContentProvider"
+            android:authorities="org.xbmc.kodi.file"
+            android:exported="true" />
+        <provider
+            android:name="org.xbmc.kodi.content.XBMCFileProvider"
+            android:authorities="org.xbmc.kodi.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/kodi_file_paths" />
+        </provider>
+
+        <receiver
+            android:name="org.xbmc.kodi.XBMCBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DREAMING_STOPPED" />
+                <action android:name="android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name="org.xbmc.kodi.XBMCSearchableActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/kodi_searchable" />
+        </activity>
+
+        <activity
+            android:name="org.xbmc.kodi.KodiDeepLinkActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="kodi" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="org.xbmc.kodi.channels.SyncChannelJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name="org.xbmc.kodi.channels.SyncProgramsJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <service
             android:name="me.aap.fermata.auto.ProjectionService"
