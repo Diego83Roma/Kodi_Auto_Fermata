@@ -1,0 +1,22 @@
+name: Import Fermata base
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Import upstream Fermata at pinned revision
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git clone https://github.com/AndreyPavlenko/Fermata.git fermata
+          cd fermata
+          git checkout --detach 8a1a5f48543b86fe454e2cd24d0d11e02e93df47
+          git submodule update --init --recursive
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/fermata-base
