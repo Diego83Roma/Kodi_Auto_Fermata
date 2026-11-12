@@ -1,0 +1,3 @@
+[submodule "kodi"]
+	path = kodi
+	url = https://github.com/xbmc/xbmc.git
