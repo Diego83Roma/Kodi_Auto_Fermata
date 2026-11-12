@@ -1,10 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Golden crown -->
     <path
-        android:fillColor="#ffffff"
-        android:fillType="evenOdd"
-        android:pathData="m 60.798693,58.152681 c 0,2.164169 -1.754694,3.917488 -3.917489,3.917488 -2.164168,0 -3.917488,-1.754695 -3.917488,-3.917488 0,-2.164169 1.754695,-3.917488 3.917488,-3.917488 2.16417,0 3.917489,1.754694 3.917489,3.917488 z M 53.538079,44.832396 c -3.830921,0.975593 -6.947324,3.622062 -8.567358,7.260613 -0.835438,1.933324 -1.27102,5.084079 -0.766735,5.589739 1.106132,0.707648 1.876988,-0.851927 2.367532,-1.532094 3.290911,-4.544068 9.995023,-6.198453 15.165669,-3.742981 2.142182,1.027807 3.865272,2.489824 5.20637,4.439636 0.783223,1.132238 1.393313,1.341097 1.863245,0.62658 0.452072,-0.696657 0.138783,-2.907545 -0.731007,-5.154157 -1.375449,-3.517632 -4.66636,-6.443039 -8.322773,-7.417258 -1.672251,-0.452071 -4.614146,-0.487797 -6.216316,-0.07008 z M 39.95036,25.897193 c -3.019069,0.532556 -5.22018,3.155577 -5.220574,6.221256 v 21.884216 21.884214 c 8.84e-4,4.8627 5.264607,7.901674 9.47625,5.471054 l 18.9525,-10.942107 18.9525,-10.942108 c 4.210683,-2.432121 4.210683,-8.509987 0,-10.942107 L 63.158536,37.589503 44.206036,26.647397 C 42.919744,25.904911 41.413,25.639297 39.95036,25.897193 Z" />
+        android:fillColor="#F5B82E"
+        android:strokeColor="#7A3E08"
+        android:strokeWidth="1.5"
+        android:pathData="M17,19 L31,31 L43,12 L54,30 L68,12 L78,31 L92,19 L86,48 L23,48 Z" />
+    <path
+        android:fillColor="#D88916"
+        android:pathData="M22,43 L87,43 L84,51 L25,51 Z" />
+    <path
+        android:fillColor="#27B9F4"
+        android:pathData="M54,17 L59,25 L54,31 L49,25 Z" />
+    <path
+        android:fillColor="#D93636"
+        android:pathData="M43,29 L47,35 L43,40 L39,35 Z" />
+    <path
+        android:fillColor="#27B9F4"
+        android:pathData="M68,29 L72,35 L68,40 L64,35 Z" />
+
+    <!-- Road leading to the horizon -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#07182D"
+        android:strokeWidth="17"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,56 C54,69 39,80 29,103" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#EAF5FF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,56 C54,69 39,80 29,103" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F5B82E"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,61 C53,72 42,84 35,99" />
 </vector>
