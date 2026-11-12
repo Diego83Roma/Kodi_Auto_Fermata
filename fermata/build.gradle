@@ -79,6 +79,8 @@ android {
             buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
 
             dependencies {
+    // Kodi's Android JSON-RPC and TV integration bridge.
+    implementation 'com.google.code.gson:gson:2.14.0'
                 implementation files('lib/auto/aauto.aar')
                 compileOnly files('lib/auto/xposed-api-82.jar')
             }
