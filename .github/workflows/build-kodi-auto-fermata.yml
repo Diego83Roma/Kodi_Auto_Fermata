@@ -105,7 +105,21 @@ jobs:
           unzip -l "$APK" | grep -F 'lib/arm64-v8a/libkodi.so'
           unzip -l "$APK" | grep -F 'assets/addons/'
           # Java/Kotlin classes are stored in DEX files, not as .class/.java paths.
-          unzip -l "$APK" | grep -E 'classes([0-9]+)?\\.dex'
+          unzip -Z1 "$APK" | grep -E '^classes([0-9]+)?[.]dex
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Main'
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Splash'
+          mkdir -p integrated-output
+          cp "$APK" integrated-output/Kodi-Auto-Fermata-TEST.apk
+          ls -lh integrated-output/Kodi-Auto-Fermata-TEST.apk
+
+      - name: Upload Kodi Auto Fermata TEST
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-auto-fermata-test-build-10
+          path: integrated-output/Kodi-Auto-Fermata-TEST.apk
+          if-no-files-found: error
+          retention-days: 14
+
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Main'
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -F 'org.xbmc.kodi.Splash'
           mkdir -p integrated-output
