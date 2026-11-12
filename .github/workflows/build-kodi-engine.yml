@@ -1,9 +1,9 @@
-name: Build Kodi ARM64 engine validation
+name: Build Kodi Auto Fermata — Kodi ARM64 integration stage
 
 on:
   push:
     branches:
-      - kodi-engine-build-01
+      - kodi-single-apk-integration-01
     paths:
       - 'kodi'
       - 'tools/build-kodi-android.sh'
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository and pinned Kodi source
         uses: actions/checkout@v5
         with:
-          ref: kodi-engine-build-01
+          ref: kodi-single-apk-integration-01
           submodules: recursive
 
       - name: Install host build dependencies
@@ -72,10 +72,11 @@ jobs:
           echo "Kodi engine validation APK: $APK"
           ls -lh "$APK"
 
-      - name: Upload Kodi engine validation artifact
+      - name: Upload Kodi Auto Fermata Kodi engine stage
         uses: actions/upload-artifact@v4
         with:
-          name: kodi-arm64-engine-validation
+          name: kodi-auto-fermata-kodi-engine-stage
           path: kodi/*.apk
+          if-no-files-found: error
           if-no-files-found: error
           retention-days: 14
