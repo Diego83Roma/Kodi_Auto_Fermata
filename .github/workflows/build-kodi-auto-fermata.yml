@@ -15,7 +15,7 @@ on:
 
 permissions:
   contents: read
-  actions: read
+  actions: write
 
 concurrency:
   group: kodi-auto-fermata-build-10
@@ -31,6 +31,18 @@ jobs:
         with:
           ref: kodi-single-apk-build-10
           submodules: recursive
+
+      - name: Cancel superseded integration attempts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh run list --workflow build-kodi-auto-fermata.yml --branch kodi-single-apk-build-10 --status in_progress --json databaseId --jq '.[].databaseId' |
+          while read -r run_id; do
+            if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
+              gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY" || true
+            fi
+          done
 
       - name: Download verified Kodi ARM64 engine from Build 9
         uses: actions/download-artifact@v4
