@@ -51,7 +51,7 @@ for source in src_root.rglob("*.java.in"):
     code = code.replace("@APP_PACKAGE@", package)
     code = code.replace("@APP_NAME@", "Kodi Auto Fermata")
     code = code.replace("@APP_NAME_LC@", "kodi")
-    code = re.sub(r"R\.(string|layout|id|drawable|xml|array|style|mipmap)\.([A-Za-z0-9_]+)",
+    code = re.sub(r"R\.(string|layout|id|drawable|xml|array|style|styleable|mipmap)\.([A-Za-z0-9_]+)",
                   lambda m: "R.%s.kodi_%s" % (m.group(1), m.group(2)), code)
     if "R." in code and "import me.aap.fermata.R;" not in code:
         code = re.sub(r"^(package [^;]+;\s*)", r"\1\nimport me.aap.fermata.R;\n", code, count=1, flags=re.M)
