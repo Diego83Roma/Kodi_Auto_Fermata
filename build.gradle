@@ -71,6 +71,7 @@ subprojects {
         ndkVersion = libs.versions.ndkVersion.get()
 
         defaultConfig {
+            ndk { abiFilters = gradle.ext.abiFilters }
             minSdkVersion SDK_MIN_VERSION
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
