@@ -43,6 +43,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class HomeActivity extends AppCompatActivity {
+    private static final String DEFAULT_KODI_REPOSITORY = "https://mirrors.kodi.tv/addons/piers/addons.xml.gz";
     private static final int PICK_ADDON_ZIP = 4102;
     private static final int BG = Color.rgb(12, 17, 29);
     private static final int PANEL = Color.rgb(25, 34, 52);
@@ -360,6 +361,7 @@ public class HomeActivity extends AppCompatActivity {
     private void manageRepositories() {
         var prefs = getSharedPreferences("addon_manager", MODE_PRIVATE);
         List<String> repos = new ArrayList<>(prefs.getStringSet("repositories", new java.util.HashSet<>()));
+        if (repos.isEmpty()) repos.add(DEFAULT_KODI_REPOSITORY);
         String current = android.text.TextUtils.join("\n", repos);
         EditText input = new EditText(this);
         input.setHint("https://host/percorso/addons.xml.gz");
@@ -393,6 +395,11 @@ public class HomeActivity extends AppCompatActivity {
                 .getStringSet("repositories", new java.util.HashSet<>());
         List<String> repositories = new ArrayList<>(saved);
         if (repositories.isEmpty()) {
+            repositories.add(DEFAULT_KODI_REPOSITORY);
+            getSharedPreferences("addon_manager", MODE_PRIVATE).edit()
+                    .putStringSet("repositories", new java.util.HashSet<>(repositories)).apply();
+        }
+        if (false) {
             new AlertDialog.Builder(this).setTitle("Nessun repository")
                     .setMessage("Aggiungi prima l'indirizzo di un repository Kodi.")
                     .setPositiveButton("Aggiungi", (d, w) -> manageRepositories())
