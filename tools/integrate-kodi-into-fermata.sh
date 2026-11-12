@@ -95,7 +95,7 @@ values.mkdir(parents=True, exist_ok=True)
 colors_template = template / "colors.xml.in"
 if colors_template.exists():
     colors = colors_template.read_text(encoding="utf-8")
-    colors = re.sub(r'name="([^"]+)"', lambda m: 'name="kodi_' + m.group(1) + '"', colors)
+    colors = re.sub(r'name="([^"]+)"', lambda m: 'name="' + (m.group(1) if m.group(1).startswith("android:") else "kodi_" + m.group(1)) + '"', colors)
     colors = prefixed_refs(colors)
     (values / "kodi_colors.xml").write_text(colors, encoding="utf-8")
 
