@@ -428,6 +428,7 @@ public class LauncherActivity extends AppCompatActivity {
 					try {
 						var intent = new Intent();
 						intent.setClassName(getContext(), "org.xbmc.kodi.Splash");
+						intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
 						intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
 						getContext().startActivity(intent);
 						MirrorDisplay.disableAccelRotation();
