@@ -999,6 +999,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		controlPanel.bind(getMediaServiceBinder());
 
+		// Modern host keeps Fermata's native content and playback without its legacy navigation chrome.
+		if (a.getIntent().getBooleanExtra("kodiauto.modern_host", false)) {
+			toolBar.setVisibility(android.view.View.GONE);
+			navBar.setVisibility(android.view.View.GONE);
+		}
+
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
 			ViewCompat.setOnApplyWindowInsetsListener(toolBar, (v, insets) -> {
 				var bars = insets.getInsets(
