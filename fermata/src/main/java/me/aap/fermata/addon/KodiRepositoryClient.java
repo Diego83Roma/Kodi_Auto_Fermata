@@ -85,8 +85,7 @@ public final class KodiRepositoryClient {
             xml = download(plainUrl);
         }
 
-        boolean gzip = infoUrl.toLowerCase(Locale.ROOT).endsWith(".gz")
-                || (xml.length > 2 && (xml[0] & 0xff) == 0x1f && (xml[1] & 0xff) == 0x8b);
+        boolean gzip = xml.length > 2 && (xml[0] & 0xff) == 0x1f && (xml[1] & 0xff) == 0x8b;
         if (gzip) {
             try (GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(xml))) {
                 xml = readLimited(in);
