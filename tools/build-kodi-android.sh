@@ -56,11 +56,12 @@ echo "== Compile Kodi native engine =="
 cmake --build "$BUILD_DIR" --parallel "$JOBS"
 
 echo "== Package upstream Kodi Android APK (engine validation artifact) =="
-cmake --build "$BUILD_DIR" --target apk --parallel "$JOBS"
+# Kodi creates the apk target in the generated build directory; run make apk there.
+make -C "$BUILD_DIR" -j"$JOBS" apk
 
-APK="$(find "$KODI_SRC" -maxdepth 2 -type f -name '*arm64*release*.apk' -o -name '*aarch64*release*.apk' | head -n 1)"
+APK="$(find "$KODI_SRC" -maxdepth 1 -type f -name '*arm64*release*.apk' -o -name '*aarch64*release*.apk' | head -n 1)"
 if [[ -z "$APK" ]]; then
-  APK="$(find "$KODI_SRC" -maxdepth 2 -type f -name '*.apk' | head -n 1)"
+  APK="$(find "$KODI_SRC" -maxdepth 1 -type f -name '*.apk' | head -n 1)"
 fi
 if [[ -z "$APK" || ! -s "$APK" ]]; then
   echo "Kodi APK packaging target completed but no APK was found." >&2
