@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace bundleAutoRelease -PAPP_ID_SFX=.kodiauto
+          ./gradlew --no-daemon --stacktrace bundleAutoRelease -PAPP_ID_SFX=.kodiauto -PABI=arm64-v8a
           AAB="$(find fermata/build/outputs/bundle/autoRelease -maxdepth 1 -type f -name '*.aab' | head -n 1)"
           test -n "$AAB"
           echo "AAB=$AAB" >> "$GITHUB_ENV"
@@ -85,8 +85,9 @@ jobs:
           unzip -p "$RUNNER_TEMP/kodiauto-universal.apks" universal.apk > "$RUNNER_TEMP/Kodi-Auto-Fermata-universal.apk"
           test -s "$RUNNER_TEMP/Kodi-Auto-Fermata-universal.apk"
           APK_SIZE="$(stat -c%s "$RUNNER_TEMP/Kodi-Auto-Fermata-universal.apk")"
-          echo "Dimensione APK universale: $APK_SIZE byte"
+          echo "Dimensione APK universale ARM64: $APK_SIZE byte"
           test "$APK_SIZE" -gt 20000000
+          test "$APK_SIZE" -lt 250000000
 
       - name: Verify package, app label and signature
         run: |
