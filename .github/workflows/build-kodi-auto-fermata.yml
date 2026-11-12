@@ -100,6 +100,14 @@ jobs:
           test -n "$APK"
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           BADGING="$("$AAPT" dump badging "$APK")"
+          echo "=== APK BADGING / SDK / ABI ==="
+          echo "$BADGING"
+          echo "=== APK SIGNATURE VERIFICATION ==="
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          echo "=== APK ZIP INTEGRITY ==="
+          unzip -t "$APK" | tail -n 2
           echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiautotest'"
           echo "$BADGING" | grep -F "Kodi Auto Fermata TEST"
           unzip -l "$APK" | grep -F 'lib/arm64-v8a/libkodi.so'
