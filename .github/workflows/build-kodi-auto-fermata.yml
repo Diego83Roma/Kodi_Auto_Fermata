@@ -17,6 +17,10 @@ permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: kodi-auto-fermata-build-10
+  cancel-in-progress: true
+
 jobs:
   integrated-apk:
     runs-on: ubuntu-latest
