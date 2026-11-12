@@ -19,4 +19,12 @@ jobs:
           cd fermata
           git checkout --detach 8a1a5f48543b86fe454e2cd24d0d11e02e93df47
           git submodule update --init --recursive
+
+          # Avoid requiring the GitHub App's elevated Workflows permission:
+          # preserve the upstream source/history but omit upstream Actions definitions.
+          if [ -d .github/workflows ]; then
+            git rm -r .github/workflows
+            git -c user.name="Kodi Auto Import" -c user.email="actions@users.noreply.github.com" commit -m "Prepare Fermata base without upstream workflows"
+          fi
+
           git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/fermata-base
