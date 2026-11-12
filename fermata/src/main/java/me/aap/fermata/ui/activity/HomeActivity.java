@@ -112,15 +112,17 @@ public class HomeActivity extends AppCompatActivity {
         TextView body = text("Film, serie, dirette e contenuti online in un'unica schermata.", 19, Color.WHITE, true);
         LinearLayout.LayoutParams bodyLp = lp(-1, -2); bodyLp.topMargin = dp(9);
         hero.addView(body, bodyLp);
-        Button open = button("Apri libreria Fermata", () -> startActivity(new Intent(this, MainActivity.class)));
+        Button open = button("Apri libreria", () -> openFermataScreen(R.id.folders_fragment));
         LinearLayout.LayoutParams openLp = lp(-1, -2); openLp.topMargin = dp(15);
         hero.addView(open, openLp);
         LinearLayout.LayoutParams heroLp = lp(-1, -2); heroLp.bottomMargin = dp(18);
         root.addView(hero, heroLp);
 
         addSection("CONTENUTI");
-        addTile("TV in diretta", "Canali e playlist", "Apri la libreria per gestire le sorgenti", () -> startActivity(new Intent(this, MainActivity.class)));
-        addTile("Film e serie", "La tua raccolta multimediale", "Apri la libreria per sfogliare i contenuti", () -> startActivity(new Intent(this, MainActivity.class)));
+        addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
+        addTile("Libreria", "Cartelle e contenuti multimediali", "Sfoglia i contenuti con Fermata", () -> openFermataScreen(R.id.folders_fragment));
+        addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
+        addTile("Playlist", "Le tue raccolte personalizzate", "Apri le playlist di Fermata", () -> openFermataScreen(R.id.playlists_fragment));
 
         addSection("ADD-ON E REPOSITORY");
         addTile("Installa da ZIP", "Aggiungi un pacchetto compatibile", "Seleziona un file ZIP dalla memoria", this::pickZip);
@@ -140,8 +142,13 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void openBuiltInAddon(int fragmentId) {
+        openFermataScreen(fragmentId);
+    }
+
+    private void openFermataScreen(int fragmentId) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("kodiauto.open_fragment", fragmentId);
+        intent.putExtra("kodiauto.modern_host", true);
         startActivity(intent);
     }
 
@@ -180,7 +187,7 @@ public class HomeActivity extends AppCompatActivity {
     private void showPlaybackSettings() {
         new AlertDialog.Builder(this).setTitle("Riproduzione")
                 .setMessage("Le impostazioni del motore di riproduzione restano quelle gestite da Fermata. Le opzioni avanzate saranno esposte qui quando collegate direttamente al player, senza controlli fittizi.")
-                .setPositiveButton("Apri Fermata", (d, w) -> startActivity(new Intent(this, MainActivity.class)))
+                .setPositiveButton("Apri riproduzione", (d, w) -> openFermataScreen(R.id.folders_fragment))
                 .setNegativeButton("Chiudi", null).show();
     }
 
