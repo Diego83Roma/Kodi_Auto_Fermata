@@ -74,7 +74,7 @@ android {
             resValue "string", "app_name", project.getProperties()
                     .getOrDefault('APP_NAME', "@string/app_name_auto")
             resValue "string", "media_service_name", "@string/media_service_name_auto"
-            resValue "drawable", "media_service_icon", "@drawable/media_service"
+            resValue "drawable", "media_service_icon", "@drawable/kodiauto_original_logo"
             buildConfigField "boolean", 'AUTO', 'true'
             buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
 
