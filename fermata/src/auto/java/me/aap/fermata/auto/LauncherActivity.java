@@ -63,6 +63,7 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
+// Kodi is launched in-process from this launcher; the engine is packaged in this APK.
 public class LauncherActivity extends AppCompatActivity {
 	public static final String INTENT_EXTRA_MODE = "fermata.mirror.mode";
 	private static final Pref<Supplier<String[]>> AA_LAUNCHER_APPS = Pref.sa("AA_LAUNCHER_APPS",
