@@ -1,6 +1,8 @@
 package me.aap.fermata.ui.activity;
 
 import android.content.ContentValues;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,6 +11,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.Gravity;
@@ -30,6 +33,23 @@ import java.util.List;
 public class AddonLibraryActivity extends AppCompatActivity {
     private static final int BG = Color.rgb(12,17,29), PANEL = Color.rgb(25,34,52);
     private LinearLayout page;
+    private boolean engineReceiverRegistered;
+    private final BroadcastReceiver engineReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (KodiAddonEngineService.ACTION_READY.equals(intent.getAction())) {
+                Intent launch = new Intent(AddonLibraryActivity.this, org.xbmc.kodi.Main.class);
+                launch.putExtra(KodiAddonEngineService.EXTRA_ADDON_ID,
+                        intent.getStringExtra(KodiAddonEngineService.EXTRA_ADDON_ID));
+                try { startActivity(launch); }
+                catch (Exception e) {
+                    Toast.makeText(AddonLibraryActivity.this, "Impossibile avviare il core Kodi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else if (KodiAddonEngineService.ACTION_FAILED.equals(intent.getAction())) {
+                Toast.makeText(AddonLibraryActivity.this, "Preparazione Kodi non riuscita: " +
+                        intent.getStringExtra("error"), Toast.LENGTH_LONG).show();
+            }
+        }
+    };
     private int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density + .5f); }
     private GradientDrawable shape(int color, int radius) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius));
@@ -40,7 +60,22 @@ public class AddonLibraryActivity extends AppCompatActivity {
         if (bold) t.setTypeface(Typeface.DEFAULT, Typeface.BOLD); return t;
     }
     @Override protected void onCreate(@Nullable Bundle state) {
-        super.onCreate(state); getWindow().setStatusBarColor(BG); getWindow().setNavigationBarColor(BG); showLibrary();
+        super.onCreate(state);
+        getWindow().setStatusBarColor(BG); getWindow().setNavigationBarColor(BG);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(KodiAddonEngineService.ACTION_READY);
+        filter.addAction(KodiAddonEngineService.ACTION_FAILED);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(engineReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(engineReceiver, filter);
+        engineReceiverRegistered = true;
+        showLibrary();
+    }
+    @Override protected void onDestroy() {
+        if (engineReceiverRegistered) {
+            try { unregisterReceiver(engineReceiver); } catch (Exception ignored) { }
+            engineReceiverRegistered = false;
+        }
+        super.onDestroy();
     }
     private JSONObject metadata(File folder) {
         try { return new JSONObject(new String(java.nio.file.Files.readAllBytes(new File(folder,"addon.json").toPath()),"UTF-8")); }
@@ -118,9 +153,7 @@ public class AddonLibraryActivity extends AppCompatActivity {
         intent.putExtra(KodiAddonEngineService.EXTRA_ADDON_PATH, folder.getAbsolutePath());
         try {
             startService(intent);
-            Toast.makeText(this,
-                    "Core Kodi e risorse predisposti nell’ambiente isolato. Avvio add-on non ancora abilitato: manca il bridge Android/Python. Nessun Kodi esterno viene aperto.",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Preparazione del motore Kodi interno in corso…", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Impossibile preparare l'ambiente add-on: " +
                     (e.getMessage() == null ? "errore" : e.getMessage()), Toast.LENGTH_LONG).show();
