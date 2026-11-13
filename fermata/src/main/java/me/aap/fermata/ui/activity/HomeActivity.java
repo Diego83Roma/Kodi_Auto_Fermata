@@ -511,6 +511,7 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    // Build refresh: source ZIP downloads and imported packages stay in the app-private library.
     private void showInstalled() {
         startActivity(new Intent(this, AddonLibraryActivity.class));
     }
