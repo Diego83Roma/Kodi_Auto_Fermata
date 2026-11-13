@@ -82,6 +82,17 @@
             android:value="me.aap.fermata.addon.cast.CastOptionsProvider" />
 
         <activity
+            android:name="org.xbmc.kodi.Main"
+            android:process=":kodi_addon_engine"
+            android:exported="false"
+            android:configChanges="orientation|keyboard|keyboardHidden|navigation|screenLayout|screenSize|smallestScreenSize|colorMode|uiMode"
+            android:screenOrientation="sensorLandscape"
+            android:resizeableActivity="true">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="kodi" />
+        </activity>
+        <activity
             android:name="me.aap.fermata.ui.activity.AddonLibraryActivity"
             android:exported="false"
             android:resizeableActivity="true" />
