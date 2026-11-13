@@ -366,6 +366,43 @@ public class HomeActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void archiveOriginalPackage(Uri uri, String addonId, String version) throws Exception {
+        File folder = new File(getKodiPackagesDirectory(), addonId);
+        if (!folder.isDirectory() && !folder.mkdirs()) throw new Exception("Cartella pacchetto non disponibile");
+        String safeVersion = (version == null ? "unknown" : version).replaceAll("[^A-Za-z0-9._-]", "_");
+        File target = new File(folder, safeVersion + ".zip");
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            File source = new File(uri.getPath());
+            if (source.getCanonicalFile().equals(target.getCanonicalFile())) return;
+        }
+        File temporary = new File(folder, safeVersion + ".zip.part");
+        if (temporary.exists()) temporary.delete();
+        try (InputStream in = getContentResolver().openInputStream(uri);
+             FileOutputStream out = new FileOutputStream(temporary)) {
+            if (in == null) throw new Exception("Impossibile conservare il pacchetto ZIP");
+            byte[] buffer = new byte[16384];
+            long total = 0;
+            int count;
+            while ((count = in.read(buffer)) != -1) {
+                total += count;
+                if (total > 100L * 1024 * 1024) throw new Exception("Pacchetto oltre il limite di 100 MB");
+                out.write(buffer, 0, count);
+            }
+            out.getFD().sync();
+        } catch (Exception e) {
+            temporary.delete();
+            throw e;
+        }
+        if (target.exists() && !target.delete()) {
+            temporary.delete();
+            throw new Exception("Impossibile aggiornare la copia ZIP");
+        }
+        if (!temporary.renameTo(target)) {
+            temporary.delete();
+            throw new Exception("Impossibile salvare la copia ZIP interna");
+        }
+    }
+
     private void importZip(Uri uri) {
         File staging = new File(getFilesDir(), "addons/import-" + System.currentTimeMillis());
         try {
