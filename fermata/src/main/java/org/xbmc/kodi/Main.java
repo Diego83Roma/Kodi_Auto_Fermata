@@ -1,6 +1,8 @@
 package org.xbmc.kodi;
 
 import android.app.NativeActivity;
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Build;
@@ -24,9 +26,11 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private XBMCSettingsContentObserver settingsObserver;
  private XBMCInputDeviceListener inputListener;
  private static final String DIAG_PREFS = "kodi_engine_state";
+ private String previousExitDetail = "";
 
  private void diag(String stage, Throwable error) {
   String detail = "";
+  if (error == null) detail = previousExitDetail;
   if (error != null) {
    try {
     java.io.StringWriter sw = new java.io.StringWriter();
@@ -88,7 +92,40 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
 
  public Main() { super(); MainActivity = this; }
 
+ private void collectPreviousExitInfo() {
+  if (Build.VERSION.SDK_INT < 30) return;
+  try {
+   ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+   if (am == null) return;
+   java.util.List<ApplicationExitInfo> exits = am.getHistoricalProcessExitReasons(getPackageName(), 0, 5);
+   if (exits == null || exits.isEmpty()) return;
+   ApplicationExitInfo info = exits.get(0);
+   StringBuilder report = new StringBuilder();
+   report.append("REPORT ANDROID ULTIMA TERMINAZIONE (non è un'eccezione Java)")
+    .append("\\nProcesso: ").append(info.getProcessName())
+    .append("\\nMotivo Android (codice): ").append(info.getReason())
+    .append("\\nDescrizione: ").append(info.getDescription())
+    .append("\\nStatus: ").append(info.getStatus())
+    .append("\\nTimestamp: ").append(info.getTimestamp())
+    .append("\\nImportanza processo: ").append(info.getImportance());
+   try (java.io.InputStream trace = info.getTraceInputStream()) {
+    if (trace != null) {
+     byte[] buffer = new byte[24576];
+     int count = trace.read(buffer);
+     if (count > 0) report.append("\\nTraccia diagnostica Android:\\n")
+      .append(new String(buffer, 0, count, java.nio.charset.StandardCharsets.UTF_8));
+    }
+   } catch (Throwable traceError) {
+    report.append("\\nTraccia non disponibile: ").append(traceError.getClass().getSimpleName());
+   }
+   previousExitDetail = report.toString();
+  } catch (Throwable t) {
+   previousExitDetail = "Lettura report terminazione Android non riuscita: " + t;
+  }
+ }
+
  @Override public void onCreate(Bundle state) {
+  collectPreviousExitInfo();
   diag("01 Main.onCreate: ingresso", null);
   java.io.File home = new java.io.File(getFilesDir(), "apk");
   java.io.File userdata = new java.io.File(getFilesDir(), "addons/engine/userdata");
