@@ -62,13 +62,13 @@ public final class KodiAddonEngineService extends Service {
                 if (!arm64Supported) throw new IOException("Questo dispositivo non dichiara il supporto ARM64 (arm64-v8a)");
 
                 progress("Verifica libreria Kodi ARM64 e preparazione avvio nativo…");
-                File nativeCore = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
-                if (!nativeCore.isFile() || nativeCore.length() == 0) {
-                    throw new IOException("libkodi.so non presente nella directory nativa installata: " + nativeCore);
-                }
-                Log.i("KodiAddonEngine", "libkodi.so present (" + nativeCore.length() +
-                        " bytes); deferred JNI loading to org.xbmc.kodi.Main after MainActivity initialization. nativeLibraryDir=" +
-                        getApplicationInfo().nativeLibraryDir + ", ABIs=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
+                // Do not require libkodi.so to exist as an extracted file in nativeLibraryDir.
+                // Android may keep JNI libraries inside the APK when extractNativeLibs is false;
+                // the platform linker resolves them from the installed package at load time.
+                // The authoritative load check is System.loadLibrary("kodi") in org.xbmc.kodi.Main.
+                Log.i("KodiAddonEngine", "ARM64 supported; deferring Kodi JNI resolution to " +
+                        "org.xbmc.kodi.Main. nativeLibraryDir=" + getApplicationInfo().nativeLibraryDir +
+                        ", ABIs=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
 
                 if (addonId != null && addonPath != null) {
                     progress("Preparazione add-on " + addonId + "…");
