@@ -4,6 +4,15 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    // libc++_shared.so is supplied by the base app. Kodi's ARM64 payload
+    // already packages it there; excluding VLC's copy prevents an AAB
+    // split clash when the two NDK builds ship different runtime binaries.
+    packagingOptions {
+        jniLibs {
+            excludes += ['**/libc++_shared.so']
+        }
+    }
 }
 
 dependencies {
