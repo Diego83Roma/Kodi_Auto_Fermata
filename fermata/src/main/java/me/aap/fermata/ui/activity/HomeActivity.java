@@ -270,14 +270,20 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void pickZip() {
+        // I provider Android usano MIME differenti per gli stessi archivi ZIP.
+        // Il wildcard evita che i pacchetti scaricati da browser o sorgenti vengano nascosti.
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         i.addCategory(Intent.CATEGORY_OPENABLE);
-        i.setType("application/zip");
-        try { startActivityForResult(i, PICK_ADDON_ZIP); }
-        catch (Exception e) {
-            i.setType("*/*");
-            startActivityForResult(i, PICK_ADDON_ZIP);
-        }
+        i.setType("*/*");
+        i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                "application/zip",
+                "application/x-zip",
+                "application/x-zip-compressed",
+                "application/octet-stream",
+                "application/x-compressed"
+        });
+        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        startActivityForResult(i, PICK_ADDON_ZIP);
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -295,52 +301,104 @@ public class HomeActivity extends AppCompatActivity {
         try {
             if (!staging.mkdirs() && !staging.isDirectory()) throw new Exception("Cartella temporanea non disponibile");
             JSONObject meta = null;
+            byte[] kodiXml = null;
             int files = 0;
             long total = 0;
             try (InputStream raw = new BufferedInputStream(getContentResolver().openInputStream(uri));
                  ZipInputStream zip = new ZipInputStream(raw)) {
+                if (raw == null) throw new Exception("Impossibile leggere il file selezionato");
                 ZipEntry entry;
                 byte[] buffer = new byte[8192];
                 while ((entry = zip.getNextEntry()) != null) {
-                    if (++files > 2000) throw new Exception("Troppi file nel pacchetto");
+                    if (++files > 4000) throw new Exception("Troppi file nel pacchetto");
                     String name = entry.getName().replace('\\', '/');
-                    if (name.startsWith("/") || name.contains("../") || name.equals("..") || name.contains("/..")) throw new Exception("Percorso ZIP non valido");
+                    if (name.startsWith("/") || name.contains("../") || name.equals("..")
+                            || name.contains("/..") || name.matches("^[A-Za-z]:.*")) {
+                        throw new Exception("Percorso ZIP non valido");
+                    }
                     if (entry.isDirectory()) continue;
-                    if (name.equals("addon.json")) {
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        int n; while ((n = zip.read(buffer)) > 0) { total += n; if (total > 80L*1024*1024) throw new Exception("ZIP troppo grande"); out.write(buffer,0,n); }
-                        meta = new JSONObject(out.toString("UTF-8"));
-                        continue;
-                    }
                     File target = new File(staging, name);
-                    if (!target.getCanonicalPath().startsWith(staging.getCanonicalPath() + File.separator)) throw new Exception("Percorso ZIP non sicuro");
-                    File parent = target.getParentFile();
-                    if (parent != null) parent.mkdirs();
-                    try (FileOutputStream out = new FileOutputStream(target)) {
-                        int n; while ((n = zip.read(buffer)) > 0) { total += n; if (total > 80L*1024*1024) throw new Exception("ZIP troppo grande"); out.write(buffer,0,n); }
+                    if (!target.getCanonicalPath().startsWith(staging.getCanonicalPath() + File.separator)) {
+                        throw new Exception("Percorso ZIP non sicuro");
                     }
+                    File parent = target.getParentFile();
+                    if (parent != null && !parent.mkdirs() && !parent.isDirectory()) {
+                        throw new Exception("Impossibile creare una cartella del pacchetto");
+                    }
+                    boolean isJson = name.equalsIgnoreCase("addon.json") || name.toLowerCase(java.util.Locale.ROOT).endsWith("/addon.json");
+                    boolean isXml = name.equalsIgnoreCase("addon.xml") || name.toLowerCase(java.util.Locale.ROOT).endsWith("/addon.xml");
+                    ByteArrayOutputStream manifest = (isJson || isXml) ? new ByteArrayOutputStream() : null;
+                    try (FileOutputStream out = new FileOutputStream(target)) {
+                        int n;
+                        while ((n = zip.read(buffer)) != -1) {
+                            if (n == 0) continue;
+                            total += n;
+                            if (total > 100L * 1024 * 1024) throw new Exception("ZIP oltre il limite di 100 MB");
+                            out.write(buffer, 0, n);
+                            if (manifest != null) {
+                                if (manifest.size() + n > 1024 * 1024) throw new Exception("Manifest add-on troppo grande");
+                                manifest.write(buffer, 0, n);
+                            }
+                        }
+                    }
+                    if (isJson && meta == null) meta = new JSONObject(manifest.toString("UTF-8"));
+                    if (isXml && kodiXml == null) kodiXml = manifest.toByteArray();
                 }
             }
-            if (meta == null) throw new Exception("Manca addon.json: questo ZIP non usa il formato Kodi Auto Fermata");
-            try (FileOutputStream manifestOut = new FileOutputStream(new File(staging, "addon.json"))) { manifestOut.write(meta.toString(2).getBytes("UTF-8")); }
-            if (meta.optInt("manifestVersion", 1) != 1) throw new Exception("Versione del manifest addon non supportata");
+            // Supporta sia il formato JSON interno sia il formato standard dei pacchetti Kodi.
+            if (meta == null && kodiXml != null) {
+                org.xmlpull.v1.XmlPullParser parser = android.util.Xml.newPullParser();
+                parser.setInput(new java.io.ByteArrayInputStream(kodiXml), "UTF-8");
+                int event = parser.getEventType();
+                while (event != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                    if (event == org.xmlpull.v1.XmlPullParser.START_TAG && "addon".equals(parser.getName())) {
+                        String id = parser.getAttributeValue(null, "id");
+                        String version = parser.getAttributeValue(null, "version");
+                        String name = parser.getAttributeValue(null, "name");
+                        String provider = parser.getAttributeValue(null, "provider-name");
+                        meta = new JSONObject();
+                        meta.put("manifestVersion", 1);
+                        meta.put("id", id == null ? "" : id);
+                        meta.put("name", (name == null || name.trim().isEmpty()) ? id : name);
+                        meta.put("version", version == null ? "1.0" : version);
+                        meta.put("provider", provider == null ? "" : provider);
+                        break;
+                    }
+                    event = parser.next();
+                }
+            }
+            if (meta == null) throw new Exception("Nel file non trovo addon.xml (Kodi) o addon.json. Verifica che sia un pacchetto ZIP di un add-on.");
+            if (meta.optInt("manifestVersion", 1) != 1) throw new Exception("Versione del manifest add-on non supportata");
             String id = meta.optString("id", "");
-            String name = meta.optString("name", "");
+            String name = meta.optString("name", id);
             String version = meta.optString("version", "1.0");
-            if (!id.matches("[a-zA-Z0-9._-]{2,80}") || name.trim().isEmpty()) throw new Exception("Manifest addon.json non valido");
+            if (!id.matches("[a-zA-Z0-9._-]{2,100}") || name.trim().isEmpty()) {
+                throw new Exception("Manifest add-on non valido: ID o nome mancante");
+            }
+            // Conserva un riepilogo uniforme per la schermata I miei Add-on.
+            try (FileOutputStream manifestOut = new FileOutputStream(new File(staging, "addon.json"))) {
+                manifestOut.write(meta.toString(2).getBytes("UTF-8"));
+            }
             File destination = new File(getFilesDir(), "addons/" + id);
-            if (destination.exists()) deleteTree(destination);
-            File parent = destination.getParentFile(); if (parent != null) parent.mkdirs();
-            if (!staging.renameTo(destination)) throw new Exception("Impossibile completare l'installazione");
+            File parent = destination.getParentFile();
+            if (parent != null && !parent.mkdirs() && !parent.isDirectory()) throw new Exception("Cartella add-on non disponibile");
+            File backup = new File(parent, id + ".previous");
+            if (backup.exists()) deleteTree(backup);
+            if (destination.exists() && !destination.renameTo(backup)) throw new Exception("Impossibile aggiornare il pacchetto già presente");
+            if (!staging.renameTo(destination)) {
+                if (backup.exists()) backup.renameTo(destination);
+                throw new Exception("Impossibile completare l'importazione");
+            }
+            if (backup.exists()) deleteTree(backup);
             String label = name + " · " + version;
             runOnUiThread(() -> {
-                Toast.makeText(this, "Pacchetto importato: " + label, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Pacchetto riconosciuto: " + label, Toast.LENGTH_LONG).show();
                 showInstalled();
             });
         } catch (Exception e) {
             deleteTree(staging);
-            runOnUiThread(() -> new AlertDialog.Builder(this).setTitle("ZIP non installato")
-                    .setMessage(e.getMessage() == null ? "Pacchetto non valido" : e.getMessage())
+            runOnUiThread(() -> new AlertDialog.Builder(this).setTitle("ZIP non importato")
+                    .setMessage(e.getMessage() == null ? "Archivio ZIP non valido o non leggibile" : e.getMessage())
                     .setPositiveButton("OK", null).show());
         }
     }
