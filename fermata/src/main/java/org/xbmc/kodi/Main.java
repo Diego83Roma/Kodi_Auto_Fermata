@@ -29,7 +29,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   System.setProperty("xbmc.data",userdata.getAbsolutePath());
   System.setProperty("xbmc.temp",temp.getAbsolutePath());
   System.setProperty("xbmc.proploaded","yes");
-  try { diag("Caricamento JNI Kodi in corso", null); System.loadLibrary("kodi"); diag("Libreria JNI Kodi caricata", null); } catch(Throwable e) { diag("ERRORE caricamento JNI Kodi", e); throw e; }
+  try { diag("Caricamento JNI Kodi in corso", null); System.loadLibrary("kodi"); diag("Libreria JNI Kodi caricata", null); } catch(Throwable e) { diag("ERRORE caricamento JNI Kodi", e); throw new RuntimeException("Caricamento della libreria Kodi non riuscito", e); }
   super.onCreate(state); diag("NativeActivity super.onCreate completato", null); getWindow().takeSurface(null);decor=getWindow().getDecorView();decor.setBackground(null);FrameLayout root=new FrameLayout(this);mMainView=new XBMCMainView(this);root.addView(mMainView,new FrameLayout.LayoutParams(-1,-1));setContentView(root);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   handler=new Handler(getMainLooper());
   settingsObserver=new XBMCSettingsContentObserver(getApplicationContext(),handler);
