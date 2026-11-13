@@ -61,13 +61,13 @@ public final class KodiAddonEngineService extends Service {
                 for (String abi : Build.SUPPORTED_ABIS) if ("arm64-v8a".equals(abi)) { arm64Supported = true; break; }
                 if (!arm64Supported) throw new IOException("Questo dispositivo non dichiara il supporto ARM64 (arm64-v8a)");
 
-                progress("Caricamento libreria nativa Kodi…");
-                try {
-                    System.loadLibrary("kodi");
-                } catch (UnsatisfiedLinkError e) {
-                    throw new IOException("Caricamento libkodi.so fallito: " + e, e);
+                progress("Verifica libreria Kodi ARM64 e preparazione avvio nativo…");
+                File nativeCore = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
+                if (!nativeCore.isFile() || nativeCore.length() == 0) {
+                    throw new IOException("libkodi.so non presente nella directory nativa installata: " + nativeCore);
                 }
-                Log.i("KodiAddonEngine", "libkodi.so loaded; nativeLibraryDir=" +
+                Log.i("KodiAddonEngine", "libkodi.so present (" + nativeCore.length() +
+                        " bytes); deferred JNI loading to org.xbmc.kodi.Main after MainActivity initialization. nativeLibraryDir=" +
                         getApplicationInfo().nativeLibraryDir + ", ABIs=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
 
                 if (addonId != null && addonPath != null) {
@@ -88,7 +88,7 @@ public final class KodiAddonEngineService extends Service {
                         .putString("native_core", "libkodi.so caricata dal linker Android")
                         .putString("runtime_root", kodiHome.getAbsolutePath())
                         .putString("last_error", "")
-                        .putString("last_stage", "Risorse pronte; apertura schermata Kodi…").apply();
+                        .putString("last_stage", "Risorse pronte; avvio dell'attività nativa Kodi…").apply();
                 progress("Risorse pronte; apertura schermata Kodi…");
                 sendBroadcast(new Intent(ACTION_READY).setPackage(getPackageName())
                         .putExtra(EXTRA_ADDON_ID, addonId == null ? "" : addonId));
