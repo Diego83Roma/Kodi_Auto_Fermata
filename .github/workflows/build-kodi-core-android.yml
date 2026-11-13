@@ -1,0 +1,82 @@
+name: Build upstream Kodi Android core (ARM64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - kodi-auto-fermata-embedded-engine
+    paths:
+      - '.github/workflows/build-kodi-core-android.yml'
+      - 'docs/KODI_ENGINE_INTEGRATION.md'
+
+permissions:
+  contents: read
+
+jobs:
+  kodi-core:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Install build prerequisites
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autopoint bison build-essential cmake curl default-jdk flex gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev libtool unzip zip zlib1g-dev pkg-config python3
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK and Kodi-supported NDK
+        run: |
+          set -euxo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" "platform-tools" "platforms;android-37" "build-tools;37.0.0" "ndk;28.2.13676358"
+      - name: Checkout upstream Kodi source
+        uses: actions/checkout@v4
+        with:
+          repository: xbmc/xbmc
+          ref: master
+          path: kodi-src
+          fetch-depth: 1
+      - name: Build Kodi unified dependencies for ARM64
+        working-directory: kodi-src/tools/depends
+        env:
+          MAKEFLAGS: -j2
+        run: |
+          set -euxo pipefail
+          ./bootstrap
+          ./configure --with-tarballs="$HOME/android-tools/xbmc-tarballs" --host=aarch64-linux-android --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/28.2.13676358" --prefix="$HOME/android-tools/xbmc-depends" --disable-debug
+          make -j2
+      - name: Configure Kodi CMake build
+        working-directory: kodi-src
+        run: |
+          set -euxo pipefail
+          make -C tools/depends/target/cmakebuildsys BUILD_DIR="$HOME/kodi-build"
+      - name: Compile Kodi core
+        working-directory: kodi-src
+        run: |
+          set -euxo pipefail
+          cmake --build "$HOME/kodi-build" --parallel 2
+      - name: Package upstream Kodi Android APK
+        working-directory: kodi-src
+        run: |
+          set -euxo pipefail
+          make -C "$HOME/kodi-build" apk
+          APK="$(find . -type f -iname '*arm64*.apk' -o -type f -name 'xbmcapp-debug.apk' | head -n 1)"
+          test -n "$APK"
+          mkdir -p "$RUNNER_TEMP/kodi-core-payload"
+          cp "$APK" "$RUNNER_TEMP/Kodi-upstream-ARM64-reference.apk"
+          unzip -q "$APK" 'lib/arm64-v8a/*' 'assets/*' -d "$RUNNER_TEMP/kodi-core-payload"
+          test -d "$RUNNER_TEMP/kodi-core-payload/lib/arm64-v8a"
+          find "$RUNNER_TEMP/kodi-core-payload" -maxdepth 4 -type f | sort | head -n 200
+      - name: Upload native core and runtime payload for integration analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-upstream-arm64-core-payload
+          path: |
+            ${{ runner.temp }}/Kodi-upstream-ARM64-reference.apk
+            ${{ runner.temp }}/kodi-core-payload/
+          if-no-files-found: error
+          retention-days: 14
