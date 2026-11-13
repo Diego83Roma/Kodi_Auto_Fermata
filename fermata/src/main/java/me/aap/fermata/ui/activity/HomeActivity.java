@@ -493,19 +493,19 @@ public class HomeActivity extends AppCompatActivity {
                 KodiAddonPackageManager.Result result =
                         KodiAddonPackageManager.downloadAndValidate(getApplicationContext(), addon);
                 StringBuilder message = new StringBuilder();
-                message.append("Pacchetto scaricato e manifest Kodi verificato.\\n");
-                message.append("ID: ").append(result.id).append("\\n");
-                message.append("Versione nel pacchetto: ").append(result.version).append("\\n");
-                message.append("Dimensione: ").append(result.archive.length() / 1024).append(" KB\\n\\n");
+                message.append("Pacchetto scaricato e manifest Kodi verificato.\n");
+                message.append("ID: ").append(result.id).append("\n");
+                message.append("Versione nel pacchetto: ").append(result.version).append("\n");
+                message.append("Dimensione: ").append(result.archive.length() / 1024).append(" KB\n\n");
                 if (result.dependencies.isEmpty()) {
                     message.append("Dipendenze dichiarate: nessuna.");
                 } else {
-                    message.append("Dipendenze dichiarate (").append(result.dependencies.size()).append("):\\n");
+                    message.append("Dipendenze dichiarate (").append(result.dependencies.size()).append("):\n");
                     for (KodiAddonPackageManager.Dependency dependency : result.dependencies) {
-                        message.append("• ").append(dependency.toString()).append("\\n");
+                        message.append("• ").append(dependency.toString()).append("\n");
                     }
                 }
-                message.append("\\nIl pacchetto è conservato nell'area privata dell'app. Non è ancora installato né eseguito: prima va preparato il runtime compatibile.");
+                message.append("\nIl pacchetto è conservato nell'area privata dell'app. Non è ancora installato né eseguito: prima va preparato il runtime compatibile.");
                 String report = message.toString();
                 runOnUiThread(() -> new AlertDialog.Builder(this)
                         .setTitle("Pacchetto verificato")
