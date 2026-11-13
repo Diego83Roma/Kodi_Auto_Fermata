@@ -32,7 +32,7 @@
         android:name="android.hardware.wifi"
         android:required="false" />
 
-    <queries>
+    <queries>\n        <package android:name="org.xbmc.kodi" />
         <intent>
             <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
         </intent>
