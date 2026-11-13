@@ -51,6 +51,7 @@
     </queries>
 
     <application
+        android:extractNativeLibs="true"
         android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
         android:banner="@drawable/banner"
