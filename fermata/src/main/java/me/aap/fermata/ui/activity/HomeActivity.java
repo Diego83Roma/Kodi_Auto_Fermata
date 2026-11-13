@@ -575,8 +575,14 @@ public class HomeActivity extends AppCompatActivity {
             new AlertDialog.Builder(this).setTitle(name)
                     .setItems(new String[]{"Apri sorgente", "Modifica", "Elimina"}, (d, which) -> {
                         if (which == 0) {
-                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-                            catch (Exception e) { Toast.makeText(this, "Impossibile aprire la sorgente", Toast.LENGTH_SHORT).show(); }
+                            try {
+                                Intent sourceIntent = new Intent(this, SourceBrowserActivity.class);
+                                sourceIntent.putExtra("source_name", name);
+                                sourceIntent.putExtra("source_url", url);
+                                startActivity(sourceIntent);
+                            } catch (Exception e) {
+                                Toast.makeText(this, "Impossibile aprire la sorgente", Toast.LENGTH_SHORT).show();
+                            }
                         } else if (which == 1) editFileSource(position);
                         else new AlertDialog.Builder(this).setTitle("Eliminare la sorgente?")
                                 .setMessage(name).setNegativeButton("Annulla", null)
