@@ -185,14 +185,8 @@ public class HomeActivity extends AppCompatActivity {
         addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
         addTile("Playlist", "Le tue raccolte personalizzate", "Apri le playlist di Fermata", () -> openFermataScreen(R.id.playlists_fragment));
 
-        addSection("GESTIONE FILE");
-        addTile("Sorgenti file", "Collegamenti a cartelle e archivi remoti", "Crea, modifica, apri o elimina una sorgente", this::showFileSources);
-
-        addSection("ADD-ON E REPOSITORY");
-        addTile("Installa da ZIP", "Aggiungi un pacchetto compatibile", "Seleziona un file ZIP dalla memoria", this::pickZip);
-        addTile("I miei Add-on", "Pacchetti installati", "Visualizza gli add-on importati", this::showInstalled);
-        addTile("Repository", "Sorgenti Kodi", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
-        addTile("Catalogo Kodi", "Ricerca add-on nei repository", "Aggiorna e cerca nel catalogo Kodi", this::browseKodiCatalog);
+        // Le funzioni ZIP, sorgenti, add-on e repository sono nascoste in questa copia:
+        // il test usa Kodi completo come unico punto di accesso per evitare doppioni.
 
         addSection("WEB E VIDEO");
         addTile("Web Browser", "Navigazione web integrata", "Apri il browser di Fermata", () -> openBuiltInAddon(R.id.web_browser_fragment));
