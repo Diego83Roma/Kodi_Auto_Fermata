@@ -89,6 +89,10 @@
             android:name="me.aap.fermata.ui.activity.SourceBrowserActivity"
             android:exported="false"
             android:resizeableActivity="true" />
+        <service
+            android:name="me.aap.fermata.ui.activity.KodiAddonEngineService"
+            android:exported="false"
+            android:process=":kodi_addon_engine" />
 
         <activity
             android:name="me.aap.fermata.ui.activity.HomeActivity"
