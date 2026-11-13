@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.IBinder;
+import android.os.Build;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,10 +49,33 @@ public final class KodiAddonEngineService extends Service {
 
                 File kodiHome = new File(getFilesDir(), "apk");
                 copyAssetTree(getAssets(), ASSET_ROOT, kodiHome);
-                File nativeCore = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
-                if (!nativeCore.isFile() || nativeCore.length() < 1024 * 1024) {
-                    throw new IOException("Libreria nativa Kodi ARM64 non installata");
+                // Android may load native libraries directly from the APK instead of
+                // extracting them into nativeLibraryDir. A File.exists() check here
+                // incorrectly reports a missing library on such installations.
+                if (!android.os.Process.is64Bit()) {
+                    throw new IOException("Il processo Android non è a 64 bit; Kodi richiede ARM64");
                 }
+                boolean arm64Supported = false;
+                for (String abi : Build.SUPPORTED_ABIS) {
+                    if ("arm64-v8a".equals(abi)) {
+                        arm64Supported = true;
+                        break;
+                    }
+                }
+                if (!arm64Supported) {
+                    throw new IOException("Questo dispositivo non dichiara il supporto ARM64 (arm64-v8a)");
+                }
+                try {
+                    // This is the authoritative runtime check: the Android linker
+                    // resolves libkodi.so and all of its packaged dependencies.
+                    System.loadLibrary("kodi");
+                } catch (UnsatisfiedLinkError linkError) {
+                    throw new IOException("Android non riesce a caricare libkodi.so ARM64: "
+                            + linkError.getMessage(), linkError);
+                }
+                String nativeLibraryDir = getApplicationInfo().nativeLibraryDir;
+                Log.i("KodiAddonEngine", "Kodi ARM64 library loaded; nativeLibraryDir="
+                        + nativeLibraryDir + ", supportedAbis=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
                 File manifest = new File(kodiHome, "system/addon-manifest.xml");
                 if (!manifest.isFile()) {
                     throw new IOException("Manifest degli add-on Kodi non trovato");
@@ -68,7 +93,7 @@ public final class KodiAddonEngineService extends Service {
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                         .putBoolean("payload_staged", true)
                         .putBoolean("native_host_ready", false)
-                        .putString("native_core", nativeCore.getAbsolutePath())
+                        .putString("native_core", "libkodi.so (caricata dal linker Android)")
                         .putString("runtime_root", kodiHome.getAbsolutePath())
                         .putString("last_error", "")
                         .apply();
