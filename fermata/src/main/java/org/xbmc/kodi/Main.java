@@ -132,8 +132,8 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   }
  }
 
- @Override protected void onPause() { diag("onPause", null); super.onPause(); }
- @Override protected void onStop() { diag("onStop", null); super.onStop(); }
+ @Override protected void onPause() { diag("LIFECYCLE onPause: ingresso", null); super.onPause(); diag("LIFECYCLE onPause: completato", null); }
+ @Override protected void onStop() { diag("LIFECYCLE onStop: ingresso", null); super.onStop(); diag("LIFECYCLE onStop: completato", null); }
 
  private void applyImmersive() {
   if (Build.VERSION.SDK_INT >= 30) {
@@ -164,8 +164,9 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  }
 
  @Override public void onStart() {
+  diag("08A onStart: ingresso prima di NativeActivity.super.onStart", null);
   super.onStart();
-  diag("08 onStart: avvio ciclo grafico", null);
+  diag("08B onStart: NativeActivity.super.onStart completato", null);
   Choreographer.getInstance().removeFrameCallback(this);
   Choreographer.getInstance().postFrameCallback(this);
  }
@@ -175,9 +176,18 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    Choreographer.getInstance().postFrameCallback(this);
    if (firstFrame) {
     firstFrame = false;
-    diag("09 JNI _doFrame: prima chiamata in avvio", null);
+    diag("09A doFrame: ingresso prima della prima chiamata JNI _doFrame", null);
    }
-   _doFrame(time);
+   try {
+    _doFrame(time);
+    if (firstFrame == false && !getSharedPreferences(DIAG_PREFS, MODE_PRIVATE).getBoolean("frame_ok", false)) {
+     getSharedPreferences(DIAG_PREFS, MODE_PRIVATE).edit().putBoolean("frame_ok", true).commit();
+     diag("09B JNI _doFrame: prima chiamata completata", null);
+    }
+   } catch (Throwable e) {
+    diag("ERRORE 09 JNI _doFrame", e);
+    throw e;
+   }
   }
  }
 
@@ -201,9 +211,11 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  }
 
  @Override protected void onResume() {
+  diag("10A onResume: ingresso prima di NativeActivity.super.onResume", null);
   super.onResume();
+  diag("10B onResume: NativeActivity.super.onResume completato", null);
   applyImmersive();
-  diag("10 onResume: Kodi in primo piano", null);
+  diag("10C onResume: UI immersiva applicata", null);
  }
 
  @Override protected void onDestroy() {
