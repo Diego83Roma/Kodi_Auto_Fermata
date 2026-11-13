@@ -69,6 +69,14 @@ jobs:
         working-directory: kodi-src
         run: |
           set -euxo pipefail
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            "$JAVA_HOME/bin/keytool" -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
           make -C "$HOME/kodi-build" apk
           APK="$(find . -type f -iname '*arm64*.apk' -o -type f -name 'xbmcapp-debug.apk' | head -n 1)"
           test -n "$APK"
