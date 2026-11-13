@@ -16,29 +16,22 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Isolated Kodi payload staging host.
- *
- * The ARM64 native libraries are installed by Android in nativeLibraryDir.
- * Kodi's packaged assets are copied into this process-private data tree.
- * NativeActivity/JNI and the Python xbmc.* bridge are deliberately not
- * started until their Android host integration is present.
- */
 public final class KodiAddonEngineService extends Service {
     public static final String EXTRA_ADDON_ID = "addon_id";
     public static final String EXTRA_ADDON_PATH = "addon_path";
     public static final String ACTION_READY = "me.aap.fermata.KODI_ENGINE_READY";
     public static final String ACTION_FAILED = "me.aap.fermata.KODI_ENGINE_FAILED";
+    public static final String ACTION_PROGRESS = "me.aap.fermata.KODI_ENGINE_PROGRESS";
     private static final String PREFS = "kodi_engine_state";
     private static final String ASSET_ROOT = "kodi_engine";
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    @Override public int onStartCommand(Intent intent, int flags, int startId) {
         final String addonId = intent == null ? null : intent.getStringExtra(EXTRA_ADDON_ID);
         final String addonPath = intent == null ? null : intent.getStringExtra(EXTRA_ADDON_PATH);
         worker.execute(() -> {
             try {
+                progress("Preparazione cartelle private…");
                 File root = new File(getFilesDir(), "addons/engine");
                 ensureDirectory(root);
                 ensureDirectory(new File(root, "addons"));
@@ -48,64 +41,64 @@ public final class KodiAddonEngineService extends Service {
                 ensureDirectory(new File(root, "python"));
 
                 File kodiHome = new File(getFilesDir(), "apk");
-                copyAssetTree(getAssets(), ASSET_ROOT, kodiHome);
-                // Android may load native libraries directly from the APK instead of
-                // extracting them into nativeLibraryDir. A File.exists() check here
-                // incorrectly reports a missing library on such installations.
-                if (!android.os.Process.is64Bit()) {
-                    throw new IOException("Il processo Android non è a 64 bit; Kodi richiede ARM64");
-                }
-                boolean arm64Supported = false;
-                for (String abi : Build.SUPPORTED_ABIS) {
-                    if ("arm64-v8a".equals(abi)) {
-                        arm64Supported = true;
-                        break;
-                    }
-                }
-                if (!arm64Supported) {
-                    throw new IOException("Questo dispositivo non dichiara il supporto ARM64 (arm64-v8a)");
-                }
-                try {
-                    // This is the authoritative runtime check: the Android linker
-                    // resolves libkodi.so and all of its packaged dependencies.
-                    System.loadLibrary("kodi");
-                } catch (UnsatisfiedLinkError linkError) {
-                    throw new IOException("Android non riesce a caricare libkodi.so ARM64: "
-                            + linkError.getMessage(), linkError);
-                }
-                String nativeLibraryDir = getApplicationInfo().nativeLibraryDir;
-                Log.i("KodiAddonEngine", "Kodi ARM64 library loaded; nativeLibraryDir="
-                        + nativeLibraryDir + ", supportedAbis=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
+                File complete = new File(kodiHome, ".fermata_payload_complete");
                 File manifest = new File(kodiHome, "system/addon-manifest.xml");
-                if (!manifest.isFile()) {
-                    throw new IOException("Manifest degli add-on Kodi non trovato");
+                if (!complete.isFile() || !manifest.isFile()) {
+                    progress("Prima installazione: copia delle risorse Kodi (può richiedere alcuni minuti)…");
+                    if (kodiHome.exists()) deleteTree(kodiHome);
+                    copyAssetTree(getAssets(), ASSET_ROOT, kodiHome);
+                    if (!manifest.isFile()) throw new IOException("Manifest degli add-on Kodi non trovato dopo la copia");
+                    try (OutputStream out = new FileOutputStream(complete)) {
+                        out.write("Kodi payload staged".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                } else {
+                    progress("Risorse Kodi già preparate: salto la copia…");
                 }
 
+                progress("Verifica architettura ARM64…");
+                if (!android.os.Process.is64Bit()) throw new IOException("Il processo Android non è a 64 bit; Kodi richiede ARM64");
+                boolean arm64Supported = false;
+                for (String abi : Build.SUPPORTED_ABIS) if ("arm64-v8a".equals(abi)) { arm64Supported = true; break; }
+                if (!arm64Supported) throw new IOException("Questo dispositivo non dichiara il supporto ARM64 (arm64-v8a)");
+
+                progress("Caricamento libreria nativa Kodi…");
+                try {
+                    System.loadLibrary("kodi");
+                } catch (UnsatisfiedLinkError e) {
+                    throw new IOException("Caricamento libkodi.so fallito: " + e, e);
+                }
+                Log.i("KodiAddonEngine", "libkodi.so loaded; nativeLibraryDir=" +
+                        getApplicationInfo().nativeLibraryDir + ", ABIs=" + java.util.Arrays.toString(Build.SUPPORTED_ABIS));
+
                 if (addonId != null && addonPath != null) {
+                    progress("Preparazione add-on " + addonId + "…");
+                    String id = safeId(addonId);
                     File source = new File(addonPath);
-                    String selectedAddonId = safeId(addonId);
-                    File destination = new File(new File(root, "userdata/addons"), selectedAddonId);
-                    ensureDirectory(destination.getParentFile());
-                    if (source.isDirectory()) copyDirectory(source, destination);
-                    writeAutoexec(new File(root, "userdata/autoexec.py"), selectedAddonId);
+                    if (!source.isDirectory()) throw new IOException("Cartella dell'add-on non trovata: " + addonPath);
+                    File destination = new File(new File(root, "userdata/addons"), id);
+                    deleteTree(destination);
+                    ensureDirectory(destination);
+                    copyDirectory(source, destination);
+                    writeAutoexec(new File(root, "userdata/autoexec.py"), id);
                 }
 
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                         .putBoolean("payload_staged", true)
                         .putBoolean("native_host_ready", false)
-                        .putString("native_core", "libkodi.so (caricata dal linker Android)")
+                        .putString("native_core", "libkodi.so caricata dal linker Android")
                         .putString("runtime_root", kodiHome.getAbsolutePath())
                         .putString("last_error", "")
-                        .apply();
+                        .putString("last_stage", "Risorse pronte; apertura schermata Kodi…").apply();
+                progress("Risorse pronte; apertura schermata Kodi…");
                 sendBroadcast(new Intent(ACTION_READY).setPackage(getPackageName())
                         .putExtra(EXTRA_ADDON_ID, addonId == null ? "" : addonId));
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                String message = e.getMessage() == null ? e.toString() : e.getMessage();
+                Log.e("KodiAddonEngine", "Engine preparation failed", e);
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                        .putBoolean("payload_staged", false)
-                        .putString("last_error", e.getMessage() == null ? e.toString() : e.getMessage())
-                        .apply();
-                sendBroadcast(new Intent(ACTION_FAILED).setPackage(getPackageName())
-                        .putExtra("error", e.getMessage() == null ? e.toString() : e.getMessage()));
+                        .putBoolean("payload_staged", false).putString("last_error", message)
+                        .putString("last_stage", "Errore durante la preparazione").apply();
+                sendBroadcast(new Intent(ACTION_FAILED).setPackage(getPackageName()).putExtra("error", message));
             } finally {
                 stopSelfResult(startId);
             }
@@ -113,76 +106,53 @@ public final class KodiAddonEngineService extends Service {
         return START_NOT_STICKY;
     }
 
+    private void progress(String message) {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("last_stage", message).apply();
+        Log.i("KodiAddonEngine", message);
+        sendBroadcast(new Intent(ACTION_PROGRESS).setPackage(getPackageName()).putExtra("stage", message));
+    }
     private String safeId(String id) throws IOException {
-        if (id.isEmpty() || !id.matches("[A-Za-z0-9._-]+") || id.equals(".") || id.equals(".."))
+        if (id == null || id.isEmpty() || !id.matches("[A-Za-z0-9._-]+") || id.equals(".") || id.equals(".."))
             throw new IOException("ID add-on non valido");
         return id;
     }
-
-    private void ensureDirectory(File directory) throws IOException {
-        if (!directory.isDirectory() && !directory.mkdirs())
-            throw new IOException("Impossibile creare: " + directory);
+    private void ensureDirectory(File d) throws IOException {
+        if (!d.isDirectory() && !d.mkdirs()) throw new IOException("Impossibile creare: " + d);
     }
-
-    private void copyAssetTree(AssetManager assets, String assetPath, File destination) throws IOException {
-        String[] children = assets.list(assetPath);
+    private void copyAssetTree(AssetManager assets, String path, File dest) throws IOException {
+        String[] children = assets.list(path);
         if (children == null || children.length == 0) {
-            File parent = destination.getParentFile();
-            if (parent != null) ensureDirectory(parent);
-            try (InputStream in = assets.open(assetPath); OutputStream out = new FileOutputStream(destination)) {
-                copy(in, out);
-            }
+            File parent = dest.getParentFile(); if (parent != null) ensureDirectory(parent);
+            try (InputStream in = assets.open(path); OutputStream out = new FileOutputStream(dest)) { copy(in, out); }
             return;
         }
-        ensureDirectory(destination);
-        for (String child : children) {
-            copyAssetTree(assets, assetPath + "/" + child, new File(destination, child));
-        }
+        ensureDirectory(dest);
+        for (String child : children) copyAssetTree(assets, path + "/" + child, new File(dest, child));
     }
-
-    private void writeAutoexec(File file, String addonId) throws IOException {
-        File parent = file.getParentFile();
-        if (parent != null) ensureDirectory(parent);
-        String script = "import xbmc\\n" +
-                "try:\\n" +
-                "    xbmc.log('Fermata: avvio add-on " + addonId + "', xbmc.LOGINFO)\\n" +
-                "    xbmc.executebuiltin('RunAddon(" + addonId + ")')\\n" +
-                "except Exception as exc:\\n" +
-                "    xbmc.log('Fermata: errore avvio add-on: %s' % exc, xbmc.LOGERROR)\\n";
-        try (OutputStream out = new FileOutputStream(file, false)) {
-            out.write(script.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
+    private void writeAutoexec(File file, String id) throws IOException {
+        ensureDirectory(file.getParentFile());
+        String script = "import xbmc\\ntry:\\n    xbmc.log('Fermata: avvio add-on " + id + "', xbmc.LOGINFO)\\n    xbmc.executebuiltin('RunAddon(" + id + ")')\\nexcept Exception as exc:\\n    xbmc.log('Fermata: errore avvio add-on: %s' % exc, xbmc.LOGERROR)\\n";
+        try (OutputStream out = new FileOutputStream(file, false)) { out.write(script.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     }
-
-    private void copyDirectory(File source, File destination) throws IOException {
-        ensureDirectory(destination);
-        File[] children = source.listFiles();
-        if (children == null) return;
+    private void copyDirectory(File source, File dest) throws IOException {
+        ensureDirectory(dest);
+        File[] children = source.listFiles(); if (children == null) return;
         for (File child : children) {
-            File target = new File(destination, child.getName());
+            File target = new File(dest, child.getName());
             if (child.isDirectory()) copyDirectory(child, target);
-            else if (child.isFile()) {
-                try (InputStream in = new FileInputStream(child); OutputStream out = new FileOutputStream(target)) {
-                    copy(in, out);
-                }
-            }
+            else if (child.isFile()) try (InputStream in = new FileInputStream(child); OutputStream out = new FileOutputStream(target)) { copy(in, out); }
         }
     }
-
+    private void deleteTree(File file) throws IOException {
+        if (file == null || !file.exists()) return;
+        File[] children = file.listFiles();
+        if (children != null) for (File child : children) deleteTree(child);
+        if (!file.delete()) throw new IOException("Impossibile rimuovere: " + file);
+    }
     private void copy(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[32768];
-        int count;
+        byte[] buffer = new byte[65536]; int count;
         while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
     }
-
-    @Override
-    public void onDestroy() {
-        worker.shutdown();
-        super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    @Override public void onDestroy() { worker.shutdown(); super.onDestroy(); }
+    @Override public IBinder onBind(Intent intent) { return null; }
 }
