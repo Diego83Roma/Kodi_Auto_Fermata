@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 public final class KodiAddonEngineService extends Service {
     public static final String EXTRA_ADDON_ID = "addon_id";
     public static final String EXTRA_ADDON_PATH = "addon_path";
+    public static final String ACTION_READY = "me.aap.fermata.KODI_ENGINE_READY";
+    public static final String ACTION_FAILED = "me.aap.fermata.KODI_ENGINE_FAILED";
     private static final String PREFS = "kodi_engine_state";
     private static final String ASSET_ROOT = "kodi_engine";
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
@@ -43,19 +45,20 @@ public final class KodiAddonEngineService extends Service {
                 ensureDirectory(new File(root, "system"));
                 ensureDirectory(new File(root, "python"));
 
-                copyAssetTree(getAssets(), ASSET_ROOT, new File(root, "runtime"));
+                File kodiHome = new File(getFilesDir(), "apk");
+                copyAssetTree(getAssets(), ASSET_ROOT, kodiHome);
                 File nativeCore = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
                 if (!nativeCore.isFile() || nativeCore.length() < 1024 * 1024) {
                     throw new IOException("Libreria nativa Kodi ARM64 non installata");
                 }
-                File manifest = new File(root, "runtime/system/addon-manifest.xml");
+                File manifest = new File(kodiHome, "system/addon-manifest.xml");
                 if (!manifest.isFile()) {
                     throw new IOException("Manifest degli add-on Kodi non trovato");
                 }
 
                 if (addonId != null && addonPath != null) {
                     File source = new File(addonPath);
-                    File destination = new File(new File(root, "addons"), safeId(addonId));
+                    File destination = new File(new File(kodiHome, "addons"), safeId(addonId));
                     if (source.isDirectory()) copyDirectory(source, destination);
                 }
 
@@ -63,14 +66,18 @@ public final class KodiAddonEngineService extends Service {
                         .putBoolean("payload_staged", true)
                         .putBoolean("native_host_ready", false)
                         .putString("native_core", nativeCore.getAbsolutePath())
-                        .putString("runtime_root", new File(root, "runtime").getAbsolutePath())
+                        .putString("runtime_root", kodiHome.getAbsolutePath())
                         .putString("last_error", "")
                         .apply();
+                sendBroadcast(new Intent(ACTION_READY).setPackage(getPackageName())
+                        .putExtra(EXTRA_ADDON_ID, addonId == null ? "" : addonId));
             } catch (Exception e) {
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                         .putBoolean("payload_staged", false)
                         .putString("last_error", e.getMessage() == null ? e.toString() : e.getMessage())
                         .apply();
+                sendBroadcast(new Intent(ACTION_FAILED).setPackage(getPackageName())
+                        .putExtra("error", e.getMessage() == null ? e.toString() : e.getMessage()));
             } finally {
                 stopSelfResult(startId);
             }
