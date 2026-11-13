@@ -34,6 +34,7 @@ import java.util.List;
 public class AddonLibraryActivity extends AppCompatActivity {
     private static final int BG = Color.rgb(12,17,29), PANEL = Color.rgb(25,34,52);
     private LinearLayout page;
+    // UI references for live embedded-engine startup diagnostics.
     private TextView engineStatus;
     private Button launchButton;
     private boolean engineReceiverRegistered;
