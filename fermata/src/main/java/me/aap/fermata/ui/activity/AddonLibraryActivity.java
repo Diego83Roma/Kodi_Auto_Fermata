@@ -37,17 +37,26 @@ public class AddonLibraryActivity extends AppCompatActivity {
     private boolean engineReceiverRegistered;
     private final BroadcastReceiver engineReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
-            if (KodiAddonEngineService.ACTION_READY.equals(intent.getAction())) {
-                Intent launch = new Intent(AddonLibraryActivity.this, org.xbmc.kodi.Main.class);
-                launch.putExtra(KodiAddonEngineService.EXTRA_ADDON_ID,
-                        intent.getStringExtra(KodiAddonEngineService.EXTRA_ADDON_ID));
-                try { startActivity(launch); }
-                catch (Exception e) {
-                    Toast.makeText(AddonLibraryActivity.this, "Impossibile avviare il core Kodi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            if (KodiAddonEngineService.ACTION_PROGRESS.equals(intent.getAction())) {
+                String stage = intent.getStringExtra("stage");
+                if (engineStatus != null && stage != null) engineStatus.setText(stage);
+            } else if (KodiAddonEngineService.ACTION_READY.equals(intent.getAction())) {
+                if (engineStatus != null) engineStatus.setText("Avvio della schermata Kodi…");
+                try {
+                    Intent launch = new Intent(AddonLibraryActivity.this, org.xbmc.kodi.Main.class);
+                    launch.putExtra(KodiAddonEngineService.EXTRA_ADDON_ID,
+                            intent.getStringExtra(KodiAddonEngineService.EXTRA_ADDON_ID));
+                    startActivity(launch);
+                } catch (Throwable e) {
+                    String message = e.getMessage() == null ? e.toString() : e.getMessage();
+                    if (engineStatus != null) engineStatus.setText("Avvio Kodi non riuscito: " + message);
+                    Toast.makeText(AddonLibraryActivity.this, "Avvio Kodi non riuscito: " + message, Toast.LENGTH_LONG).show();
                 }
             } else if (KodiAddonEngineService.ACTION_FAILED.equals(intent.getAction())) {
-                Toast.makeText(AddonLibraryActivity.this, "Preparazione Kodi non riuscita: " +
-                        intent.getStringExtra("error"), Toast.LENGTH_LONG).show();
+                String error = intent.getStringExtra("error");
+                if (engineStatus != null) engineStatus.setText("Errore: " + error);
+                if (launchButton != null) launchButton.setEnabled(true);
+                Toast.makeText(AddonLibraryActivity.this, "Preparazione Kodi non riuscita: " + error, Toast.LENGTH_LONG).show();
             }
         }
     };
@@ -142,9 +151,12 @@ public class AddonLibraryActivity extends AppCompatActivity {
         LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(16);page.addView(title,tp);
         TextView info=text("ID: "+meta.optString("id",folder.getName())+"\nVersione: "+meta.optString("version","—")+"\nAutore: "+meta.optString("provider","—"),15,Color.rgb(190,203,220),false);
         LinearLayout.LayoutParams infoLp=new LinearLayout.LayoutParams(-1,-2);infoLp.topMargin=dp(18);page.addView(info,infoLp);
-        TextView status=text("Pacchetto importato. Il core Kodi ARM64 e le risorse sono inclusi nell’app e vengono predisposti in un ambiente privato separato. Il collegamento NativeActivity e le API Python xbmc.* sono ancora in integrazione.",14,Color.rgb(174,188,208),false);
+        TextView status=text("Pacchetto importato. Il motore Kodi ARM64 è incluso nell'app. L'avvio interno è in fase di collaudo.",14,Color.rgb(174,188,208),false);
         LinearLayout.LayoutParams st=new LinearLayout.LayoutParams(-1,-2);st.topMargin=dp(22);page.addView(status,st);
-        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(24);page.addView(button("Avvia motore add-on interno",()->startInternalEngine(folder,meta),true),bp);
+        engineStatus=text("Motore non ancora avviato.",14,Color.rgb(120,190,255),true);
+        LinearLayout.LayoutParams es=new LinearLayout.LayoutParams(-1,-2);es.topMargin=dp(12);page.addView(engineStatus,es);
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(24);
+        launchButton=button("Avvia motore add-on interno",()->startInternalEngine(folder,meta),true);page.addView(launchButton,bp);
         LinearLayout.LayoutParams backLp=new LinearLayout.LayoutParams(-1,-2);backLp.topMargin=dp(10);page.addView(button("Torna alla libreria",this::showLibrary,false),backLp);
     }
     private void startInternalEngine(File folder, JSONObject meta) {
@@ -153,9 +165,13 @@ public class AddonLibraryActivity extends AppCompatActivity {
                 meta.optString("id", folder.getName()));
         intent.putExtra(KodiAddonEngineService.EXTRA_ADDON_PATH, folder.getAbsolutePath());
         try {
+            if (engineStatus != null) engineStatus.setText("Richiesta avviata: attendo il servizio Kodi…");
+            if (launchButton != null) launchButton.setEnabled(false);
             startService(intent);
-            Toast.makeText(this, "Preparazione del motore Kodi interno in corso…", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Preparazione del motore Kodi interno avviata", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
+            if (engineStatus != null) engineStatus.setText("Errore nell'avvio del servizio: " + e);
+            if (launchButton != null) launchButton.setEnabled(true);
             Toast.makeText(this, "Impossibile preparare l'ambiente add-on: " +
                     (e.getMessage() == null ? "errore" : e.getMessage()), Toast.LENGTH_LONG).show();
         }
