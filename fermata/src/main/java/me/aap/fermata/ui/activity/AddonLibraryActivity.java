@@ -84,6 +84,18 @@ public class AddonLibraryActivity extends AppCompatActivity {
         engineReceiverRegistered = true;
         showLibrary();
     }
+    @Override protected void onResume() {
+        super.onResume();
+        if (engineStatus != null) {
+            android.content.SharedPreferences prefs = getSharedPreferences("kodi_engine_state", MODE_PRIVATE);
+            String stage = prefs.getString("last_stage", "");
+            String error = prefs.getString("last_error", "");
+            if (!stage.isEmpty()) {
+                engineStatus.setText(error.isEmpty() ? "Diagnostica Kodi: " + stage : "Kodi: " + stage + "\\n" + error);
+            }
+            if (launchButton != null) launchButton.setEnabled(true);
+        }
+    }
     @Override protected void onDestroy() {
         if (engineReceiverRegistered) {
             try { unregisterReceiver(engineReceiver); } catch (Exception ignored) { }
