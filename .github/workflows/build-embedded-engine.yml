@@ -16,11 +16,12 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       NO_GS: '1'
     steps:
@@ -38,21 +39,48 @@ jobs:
 
       - name: Install Android SDK packages
         run: |
-          set -eu
+          set -euo pipefail
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
-          "$SDKMANAGER" "platform-tools"
-          "$SDKMANAGER" "platforms;android-36"
-          "$SDKMANAGER" "ndk;29.0.14206865"
+          LICENSE_STATUS=$?
+          set -o pipefail
+          if [ "$LICENSE_STATUS" -ne 0 ] && [ "$LICENSE_STATUS" -ne 141 ]; then exit "$LICENSE_STATUS"; fi
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "ndk;29.0.14206865"
 
-      - name: Verify isolated add-on bootstrap and no external Kodi launch
+      - name: Download the verified upstream Kodi ARM64 payload
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          ARTIFACT_ID="14047181730"
+          mkdir -p "$RUNNER_TEMP/kodi-payload"
+          curl --fail --location --retry 4 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/Diego83Roma/Kodi_Auto_Fermata/actions/artifacts/$ARTIFACT_ID/zip" \
+            --output "$RUNNER_TEMP/kodi-core-payload.zip"
+          unzip -q "$RUNNER_TEMP/kodi-core-payload.zip" -d "$RUNNER_TEMP/kodi-payload"
+          PAYLOAD="$RUNNER_TEMP/kodi-payload/kodi-core-payload"
+          test -s "$PAYLOAD/lib/arm64-v8a/libkodi.so"
+          test -s "$PAYLOAD/assets/system/addon-manifest.xml"
+          mkdir -p fermata/src/main/jniLibs/arm64-v8a fermata/src/main/assets/kodi_engine
+          cp -a "$PAYLOAD/lib/arm64-v8a/." fermata/src/main/jniLibs/arm64-v8a/
+          cp -a "$PAYLOAD/assets/." fermata/src/main/assets/kodi_engine/
+          echo "Kodi native libraries: $(find fermata/src/main/jniLibs/arm64-v8a -maxdepth 1 -name '*.so' | wc -l)"
+          echo "Kodi runtime assets: $(find fermata/src/main/assets/kodi_engine -type f | wc -l)"
+          du -sh fermata/src/main/jniLibs/arm64-v8a fermata/src/main/assets/kodi_engine
+
+      - name: Verify embedded payload and isolated host
+        run: |
+          set -euo pipefail
+          test -s fermata/src/main/jniLibs/arm64-v8a/libkodi.so
+          test -s fermata/src/main/assets/kodi_engine/system/addon-manifest.xml
           test -s fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
           grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           ! grep -q 'org.xbmc.kodi' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
-          echo "Bootstrap isolato verificato; runtime Kodi nativo non incluso in questa build."
+          echo "Payload nativo e assets Kodi incorporati nell'APK Fermata; bootstrap NativeActivity/bridge Python ancora da collegare."
 
       - name: Build modern TEST Android App Bundle
         run: |
@@ -74,7 +102,7 @@ jobs:
           test -s "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
           ls -lh "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
 
-      - name: Verify package and signature
+      - name: Verify package, native core and signature
         run: |
           set -euo pipefail
           APK="$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
@@ -83,9 +111,10 @@ jobs:
           BADGING="$("$AAPT" dump badging "$APK")"
           echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiautomodern'"
           echo "$BADGING" | grep -F "application-label:'Kodi Auto Fermata TEST'"
+          unzip -l "$APK" | grep -E 'lib/arm64-v8a/libkodi.so|assets/kodi_engine/system/addon-manifest.xml'
           "$APKSIGNER" verify --verbose "$APK"
 
-      - name: Upload installable APK
+      - name: Upload installable TEST APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
