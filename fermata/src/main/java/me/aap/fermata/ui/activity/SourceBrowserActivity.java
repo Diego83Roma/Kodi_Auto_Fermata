@@ -47,7 +47,9 @@ public class SourceBrowserActivity extends AppCompatActivity {
         if(!name.toLowerCase(java.util.Locale.ROOT).endsWith(".zip")&&(mime==null||!mime.toLowerCase(java.util.Locale.ROOT).contains("zip"))){Toast.makeText(this,"La sorgente non ha restituito un archivio ZIP.",Toast.LENGTH_LONG).show();return;}
         if(!name.toLowerCase(java.util.Locale.ROOT).endsWith(".zip"))name+=".zip";name=name.replaceAll("[^A-Za-z0-9._-]","_");
         File dir=new File(getFilesDir(),"kodi-packages/sources");if(!dir.isDirectory()&&!dir.mkdirs()){Toast.makeText(this,"Cartella pacchetti non disponibile",Toast.LENGTH_LONG).show();return;}
-        File target=new File(dir,name);if(target.exists())target=new File(dir,System.currentTimeMillis()+"-"+name);File temp=new File(target.getAbsolutePath()+".part");
+        File candidate=new File(dir,name);
+        final File target=candidate.exists()?new File(dir,System.currentTimeMillis()+"-"+name):candidate;
+        final File temp=new File(target.getAbsolutePath()+".part");
         final String saved=target.getName();Toast.makeText(this,"Download ZIP nella libreria interna…",Toast.LENGTH_SHORT).show();
         new Thread(()->{HttpURLConnection conn=null;try{
             URLConnection raw=new URL(url).openConnection();if(!(raw instanceof HttpURLConnection))throw new Exception("Protocollo non supportato");
