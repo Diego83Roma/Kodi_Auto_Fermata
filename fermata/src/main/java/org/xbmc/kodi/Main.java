@@ -17,7 +17,16 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private native void _onNewIntent(Intent intent); private native void _onActivityResult(int requestCode,int resultCode,Intent resultData);
  private native void _doFrame(long frameTimeNanos); private native void _onVisibleBehindCanceled(); private native void _callNative(long funcAddr,long variantAddr);
  public Main(){super();MainActivity=this;}
- @Override public void onCreate(Bundle state){System.loadLibrary("kodi");super.onCreate(state);getWindow().takeSurface(null);decor=getWindow().getDecorView();decor.setBackground(null);FrameLayout root=new FrameLayout(this);mMainView=new XBMCMainView(this);root.addView(mMainView,new FrameLayout.LayoutParams(-1,-1));setContentView(root);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
+ @Override public void onCreate(Bundle state){
+  java.io.File home=new java.io.File(getFilesDir(),"apk");
+  java.io.File userdata=new java.io.File(getFilesDir(),"addons/engine/userdata");
+  java.io.File temp=new java.io.File(getCacheDir(),"kodi");
+  home.mkdirs();userdata.mkdirs();temp.mkdirs();
+  System.setProperty("xbmc.home",home.getAbsolutePath());
+  System.setProperty("xbmc.data",userdata.getAbsolutePath());
+  System.setProperty("xbmc.temp",temp.getAbsolutePath());
+  System.setProperty("xbmc.proploaded","yes");
+  System.loadLibrary("kodi");super.onCreate(state);getWindow().takeSurface(null);decor=getWindow().getDecorView();decor.setBackground(null);FrameLayout root=new FrameLayout(this);mMainView=new XBMCMainView(this);root.addView(mMainView,new FrameLayout.LayoutParams(-1,-1));setContentView(root);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   handler=new Handler(getMainLooper());
   settingsObserver=new XBMCSettingsContentObserver(getApplicationContext(),handler);
   getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI,true,settingsObserver);
