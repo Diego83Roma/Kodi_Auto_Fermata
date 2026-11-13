@@ -324,11 +324,13 @@ public class NavBarMediator extends PrefNavBarMediator
 		names.add("folders");
 		names.add("favorites");
 		names.add("playlists");
+		// Keep the menu inside the visible Android Auto navigation slots.
+		// Add-on shortcuts follow it and remain available through the overflow.
+		names.add("menu");
 		for (AddonInfo ai : BuildConfig.ADDONS) {
 			FermataAddon a = amgr.getAddon(ai.className);
 			if (a instanceof FermataFragmentAddon) names.add(ai.className);
 		}
-		names.add("menu");
 		return names;
 	}
 
