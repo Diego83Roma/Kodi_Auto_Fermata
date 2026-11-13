@@ -6,6 +6,7 @@ on:
     branches:
       - kodi-auto-fermata-modern-ui
       - kodi-auto-fermata-modern-integration
+      - kodi-auto-fermata-zip-import-test
     paths:
       - 'fermata/**'
       - 'modules/**'
