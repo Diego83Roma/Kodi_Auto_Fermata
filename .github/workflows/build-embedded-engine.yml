@@ -90,8 +90,9 @@ jobs:
           ! grep -q 'nativeCore.isFile()' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
           grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
-          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
-          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
+          grep -A8 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml | grep -q 'android:launchMode="singleInstance"'
+          ! grep -A8 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml | grep -q 'android:process='
+          grep -A4 'android:name="me.aap.fermata.ui.activity.KodiAddonEngineService"' fermata/src/main/AndroidManifest.xml | grep -q 'android:process=":kodi_addon_engine"'
           grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           grep -q 'ACTION_PROGRESS' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           grep -q 'fermata_payload_complete' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
