@@ -59,6 +59,16 @@ jobs:
           test "$COUNT" -ge 10
           echo "Trovate $COUNT directory di moduli; gdrive resta escluso perché NO_GS=1."
 
+      - name: Verify add-on library and private source browser integration
+        run: |
+          set -euo pipefail
+          test -s fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          test -s fermata/src/main/java/me/aap/fermata/ui/activity/SourceBrowserActivity.java
+          grep -q 'archiveOriginalPackage(uri, id, version)' fermata/src/main/java/me/aap/fermata/ui/activity/HomeActivity.java
+          grep -q 'SourceBrowserActivity' fermata/src/main/AndroidManifest.xml
+          grep -q 'AddonLibraryActivity' fermata/src/main/AndroidManifest.xml
+          echo "Schermata add-on, download ZIP privato e apertura Kodi separata presenti."
+
       - name: Build modern TEST Android App Bundle
         run: |
           set -euo pipefail
