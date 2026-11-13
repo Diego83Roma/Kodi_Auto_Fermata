@@ -36,6 +36,43 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   else android.util.Log.e("KodiAddonEngine", "CHECKPOINT: " + stage, error);
  }
 
+
+ private void recordNativeLibraryDiagnostics() {
+  String apkPath = getApplicationInfo().sourceDir;
+  String nativeDir = getApplicationInfo().nativeLibraryDir;
+  StringBuilder files = new StringBuilder();
+  try {
+   java.io.File dir = new java.io.File(nativeDir);
+   java.io.File[] entries = dir.listFiles();
+   if (entries != null) for (java.io.File f : entries) {
+    if (files.length() > 0) files.append(", ");
+    files.append(f.getName()).append("(").append(f.length()).append(")");
+   }
+   if (files.length() == 0) files.append("(vuota o non accessibile)");
+  } catch (Throwable t) { files.append("lettura fallita: ").append(t); }
+  boolean inApk = false;
+  long libSize = -1L;
+  String zipError = "";
+  try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(apkPath)) {
+   java.util.zip.ZipEntry entry = zip.getEntry("lib/arm64-v8a/libkodi.so");
+   if (entry != null) { inApk = true; libSize = entry.getSize(); }
+  } catch (Throwable t) { zipError = t.getClass().getName() + ": " + t.getMessage(); }
+  try {
+   getSharedPreferences(DIAG_PREFS, MODE_PRIVATE).edit()
+    .putString("native_apk_path", apkPath)
+    .putString("native_dir_path", nativeDir)
+    .putString("native_dir_files", files.toString())
+    .putBoolean("native_lib_in_apk", inApk)
+    .putLong("native_lib_apk_size", libSize)
+    .putString("native_zip_error", zipError)
+    .putString("native_abi", android.os.Build.SUPPORTED_ABIS[0])
+    .commit();
+  } catch (Throwable ignored) { }
+  android.util.Log.i("KodiAddonEngine", "Native diagnostics: apk=" + apkPath
+   + ", nativeDir=" + nativeDir + ", libkodi in APK=" + inApk
+   + ", size=" + libSize + ", nativeDir files=" + files + ", zipError=" + zipError);
+ }
+
  private native void _onNewIntent(Intent intent);
  private native void _onActivityResult(int requestCode, int resultCode, Intent resultData);
  private native void _doFrame(long frameTimeNanos);
@@ -56,6 +93,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   System.setProperty("xbmc.proploaded", "yes");
   diag("02 Percorsi Kodi impostati", null);
   try {
+   recordNativeLibraryDiagnostics();
    diag("03 System.loadLibrary(kodi): avvio", null);
    System.loadLibrary("kodi");
    diag("04 Libreria JNI Kodi caricata", null);
