@@ -92,6 +92,9 @@ jobs:
           grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
           grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
           grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          grep -q 'ACTION_PROGRESS' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          grep -q 'fermata_payload_complete' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          grep -q 'Caricamento libreria nativa Kodi' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           ! grep -q 'org.xbmc.kodi' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           echo "Kodi ARM64 payload + NativeActivity JNI host + surface/settings/input bridges verified."
 
