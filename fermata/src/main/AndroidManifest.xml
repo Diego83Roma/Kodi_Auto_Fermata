@@ -86,7 +86,7 @@
             android:exported="false"
             android:launchMode="singleInstance"
             android:configChanges="orientation|keyboard|keyboardHidden|navigation|screenLayout|screenSize|smallestScreenSize|colorMode|uiMode"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="landscape"
             android:resizeableActivity="true">
             <meta-data
                 android:name="android.app.lib_name"
