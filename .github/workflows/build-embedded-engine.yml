@@ -87,7 +87,10 @@ jobs:
           test -s fermata/src/main/java/org/xbmc/kodi/XBMCSettingsContentObserver.java
           test -s fermata/src/main/java/org/xbmc/kodi/XBMCInputDeviceListener.java
           ! grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          grep -q 'System.load(kodiLib.getAbsolutePath())' fermata/src/main/java/org/xbmc/kodi/Main.java
+          ! grep -q 'System.load(kodiLib.getAbsolutePath())' fermata/src/main/java/org/xbmc/kodi/Main.java
+          grep -q 'super.onCreate(state)' fermata/src/main/java/org/xbmc/kodi/Main.java
+          grep -q 'android:name="android.app.lib_name"' fermata/src/main/AndroidManifest.xml
+          grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
           ! grep -q 'nativeCore.isFile()' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
           grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
