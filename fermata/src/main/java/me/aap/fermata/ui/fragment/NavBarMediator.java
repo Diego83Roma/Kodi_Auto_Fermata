@@ -241,6 +241,14 @@ public class NavBarMediator extends PrefNavBarMediator
 			ActivityFragment f = a.getActiveFragment();
 			if (f instanceof MainActivityFragment) ((MainActivityFragment) f).contributeToNavBarMenu(b);
 
+			// Surface installed Fermata sections in the Android Auto menu as well as the phone nav bar.
+			for (AddonInfo info : BuildConfig.ADDONS) {
+				FermataAddon addon = getAddonManager().getAddon(info.className);
+				if (addon instanceof FermataFragmentAddon) {
+					b.addItem(addon.getAddonId(), info.icon, info.addonName);
+				}
+			}
+
 			b.addItem(R.id.nav_about, R.drawable.about, R.string.about);
 			b.addItem(R.id.settings_fragment, R.drawable.settings, R.string.settings);
 			if (BuildConfig.AUTO) b.addItem(R.id.nav_donate, R.drawable.coffee, R.string.donate);
@@ -309,6 +317,10 @@ public class NavBarMediator extends PrefNavBarMediator
 			return true;
 		}
 
+		if (getAddonManager().hasAddon(itemId)) {
+			MainActivityDelegate.get(item.getContext()).showFragment(itemId);
+			return true;
+		}
 		return false;
 	}
 
