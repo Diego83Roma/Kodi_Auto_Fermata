@@ -85,7 +85,8 @@ jobs:
           test -s fermata/src/main/java/org/xbmc/kodi/XBMCMainView.java
           test -s fermata/src/main/java/org/xbmc/kodi/XBMCSettingsContentObserver.java
           test -s fermata/src/main/java/org/xbmc/kodi/XBMCInputDeviceListener.java
-          grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          ! grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/org/xbmc/kodi/Main.java
           ! grep -q 'nativeCore.isFile()' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
           grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
@@ -94,7 +95,7 @@ jobs:
           grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           grep -q 'ACTION_PROGRESS' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           grep -q 'fermata_payload_complete' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          grep -q 'Caricamento libreria nativa Kodi' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          grep -q 'Verifica libreria Kodi ARM64' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
           echo "Kodi ARM64 payload + NativeActivity JNI host + surface/settings/input bridges verified."
 
       - name: Build modern TEST Android App Bundle
