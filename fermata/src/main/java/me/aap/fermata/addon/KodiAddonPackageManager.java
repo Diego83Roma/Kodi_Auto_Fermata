@@ -95,7 +95,7 @@ public final class KodiAddonPackageManager {
             if (status < 200 || status >= 300) {
                 throw new java.io.IOException("Download pacchetto: HTTP " + status);
             }
-            long length = connection.getContentLengthLong();
+            long length = connection.getContentLength();
             if (length > MAX_PACKAGE_BYTES) {
                 throw new java.io.IOException("Pacchetto oltre il limite di 100 MB");
             }
