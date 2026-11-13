@@ -1,0 +1,95 @@
+name: Build Kodi Auto Fermata Embedded Engine TEST APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - kodi-auto-fermata-embedded-engine
+    paths:
+      - 'fermata/**'
+      - 'modules/**'
+      - 'depends/**'
+      - '*.gradle'
+      - 'gradle/**'
+      - 'settings.gradle'
+      - '.github/workflows/build-embedded-engine.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NO_GS: '1'
+    steps:
+      - name: Checkout isolated engine branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK packages
+        run: |
+          set -eu
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" "platform-tools"
+          "$SDKMANAGER" "platforms;android-36"
+          "$SDKMANAGER" "ndk;29.0.14206865"
+
+      - name: Verify isolated add-on bootstrap and no external Kodi launch
+        run: |
+          set -euo pipefail
+          test -s fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
+          grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          ! grep -q 'org.xbmc.kodi' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          echo "Bootstrap isolato verificato; runtime Kodi nativo non incluso in questa build."
+
+      - name: Build modern TEST Android App Bundle
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace bundleAutoRelease -PAPP_ID_SFX=.kodiautomodern -PAPP_NAME="Kodi Auto Fermata TEST" -PABI=arm64-v8a -PNO_GS=true
+          AAB="$(find fermata/build/outputs/bundle/autoRelease -maxdepth 1 -type f -name '*.aab' | head -n 1)"
+          test -n "$AAB"
+          echo "AAB=$AAB" >> "$GITHUB_ENV"
+          ls -lh "$AAB"
+
+      - name: Create signed universal TEST APK
+        run: |
+          set -euo pipefail
+          BUNDLETOOL_VERSION="1.18.3"
+          curl --fail --location --retry 3 "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" --output "$RUNNER_TEMP/bundletool.jar"
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --bundle="$AAB" --output="$RUNNER_TEMP/kodiauto-modern.apks" --mode=universal --ks=res/fermata.jks --ks-key-alias=fermata --ks-pass=pass:fermata --key-pass=pass:fermata
+          unzip -p "$RUNNER_TEMP/kodiauto-modern.apks" universal.apk > "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
+          test -s "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
+          ls -lh "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
+
+      - name: Verify package and signature
+        run: |
+          set -euo pipefail
+          APK="$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiautomodern'"
+          echo "$BADGING" | grep -F "application-label:'Kodi Auto Fermata TEST'"
+          "$APKSIGNER" verify --verbose "$APK"
+
+      - name: Upload installable APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-auto-fermata-embedded-engine-test
+          path: ${{ runner.temp }}/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk
+          if-no-files-found: error
+          retention-days: 14
