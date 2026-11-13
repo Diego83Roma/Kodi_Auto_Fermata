@@ -246,11 +246,23 @@ public class HomeActivity extends AppCompatActivity {
         String time = when == 0L ? "mai" : android.text.format.DateFormat.format("dd/MM/yyyy HH:mm:ss", when).toString();
         File nativeLib = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
         File runtime = new File(getFilesDir(), "apk");
+        boolean libInApk = prefs.getBoolean("native_lib_in_apk", false);
+        long libApkSize = prefs.getLong("native_lib_apk_size", -1L);
+        String apkPath = prefs.getString("native_apk_path", "non rilevato");
+        String nativeDir = prefs.getString("native_dir_path", getApplicationInfo().nativeLibraryDir);
+        String nativeFiles = prefs.getString("native_dir_files", "non rilevati");
+        String zipError = prefs.getString("native_zip_error", "");
         String report = "Ultima fase raggiunta:\n" + stage
                 + "\n\nErrore Java:\n" + (error.isEmpty() ? "nessuno registrato" : error)
                 + "\n\nUltimo aggiornamento: " + time
                 + "\n\nABI dispositivo: " + android.os.Build.SUPPORTED_ABIS[0]
-                + "\nLibreria Kodi presente: " + nativeLib.exists()
+                + "\nLibreria Kodi in APK: " + libInApk
+                + "\nDimensione libkodi.so nell'APK: " + libApkSize
+                + "\nLibreria nella cartella nativa: " + nativeLib.exists()
+                + "\nPercorso APK installato: " + apkPath
+                + "\nCartella librerie native: " + nativeDir
+                + "\nFile nella cartella native: " + nativeFiles
+                + (zipError.isEmpty() ? "" : "\nErrore lettura APK: " + zipError)
                 + "\nRuntime Kodi presente: " + runtime.exists()
                 + "\nPercorso runtime: " + runtime.getAbsolutePath()
                 + "\n\nInvia questa schermata/testo per individuare il punto esatto del blocco.";
