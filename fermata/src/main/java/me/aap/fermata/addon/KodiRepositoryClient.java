@@ -147,12 +147,17 @@ public final class KodiRepositoryClient {
         String id = null, name = null, version = null, provider = null;
         String summary = "", description = "", type = "Altro", icon = "";
         String currentTag = null;
+        String dataDir = null;
+        boolean inDataDir = false;
         int depth = 0;
         while (event != XmlPullParser.END_DOCUMENT) {
             if (event == XmlPullParser.START_TAG) {
                 String tag = parser.getName();
                 depth++;
-                if ("addon".equals(tag) && depth == 2) {
+                if ("datadir".equals(tag) && depth == 2) {
+                    currentTag = "datadir";
+                    inDataDir = true;
+                } else if ("addon".equals(tag) && depth == 2) {
                     id = parser.getAttributeValue(null, "id");
                     name = parser.getAttributeValue(null, "name");
                     version = parser.getAttributeValue(null, "version");
@@ -178,18 +183,25 @@ public final class KodiRepositoryClient {
                 } else if (id != null && "description".equals(tag)) {
                     currentTag = "description";
                 }
-            } else if (event == XmlPullParser.TEXT && id != null && currentTag != null) {
+            } else if (event == XmlPullParser.TEXT && currentTag != null && (id != null || inDataDir)) {
                 String value = parser.getText() == null ? "" : parser.getText().trim();
-                if ("icon".equals(currentTag) && !value.isEmpty()) icon = value;
+                if ("datadir".equals(currentTag) && !value.isEmpty()) {
+                    dataDir = resolve(baseUrl, value);
+                    if (!dataDir.isEmpty() && !dataDir.endsWith("/")) dataDir += "/";
+                } else if ("icon".equals(currentTag) && !value.isEmpty()) icon = value;
                 else if ("summary".equals(currentTag) && !value.isEmpty()) summary = value;
                 else if ("description".equals(currentTag) && !value.isEmpty()) description = value;
             } else if (event == XmlPullParser.END_TAG) {
                 String tag = parser.getName();
-                if ("icon".equals(tag) || "summary".equals(tag) || "description".equals(tag)) {
+                if ("datadir".equals(tag)) {
+                    inDataDir = false;
+                    currentTag = null;
+                } else if ("icon".equals(tag) || "summary".equals(tag) || "description".equals(tag)) {
                     currentTag = null;
                 }
                 if ("addon".equals(tag) && id != null) {
-                    String packageUrl = baseUrl + id + "/" + id + "-" + version + ".zip";
+                    String packageBase = (dataDir == null || dataDir.isEmpty()) ? baseUrl : dataDir;
+                    String packageUrl = packageBase + id + "/" + id + "-" + version + ".zip";
                     result.add(new Addon(id, safe(name, id), safe(version, ""),
                             safe(provider, ""), summary, description, type,
                             resolve(baseUrl, icon), packageUrl));
