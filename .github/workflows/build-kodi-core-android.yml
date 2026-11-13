@@ -31,7 +31,13 @@ jobs:
         run: |
           set -euxo pipefail
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
+          LICENSE_STATUS=$?
+          set -o pipefail
+          if [ "$LICENSE_STATUS" -ne 0 ] && [ "$LICENSE_STATUS" -ne 141 ]; then
+            exit "$LICENSE_STATUS"
+          fi
           "$SDKMANAGER" "platform-tools" "platforms;android-37" "build-tools;37.0.0" "ndk;28.2.13676358"
       - name: Checkout upstream Kodi source
         uses: actions/checkout@v4
