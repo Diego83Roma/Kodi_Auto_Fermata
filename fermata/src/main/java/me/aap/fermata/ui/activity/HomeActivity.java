@@ -474,19 +474,162 @@ public class HomeActivity extends AppCompatActivity {
 
     private void showInstalled() {
         File dir = new File(getFilesDir(), "addons");
-        List<String> lines = new ArrayList<>();
-        if (dir.isDirectory()) {
-            File[] files = dir.listFiles();
-            if (files != null) for (File f : files) {
-                if (!f.isDirectory()) continue;
-                try {
-                    JSONObject j = new JSONObject(new String(java.nio.file.Files.readAllBytes(new File(f, "addon.json").toPath()), "UTF-8"));
-                    lines.add(j.optString("name", f.getName()) + "  ·  " + j.optString("version", ""));
-                } catch (Exception ignored) { lines.add(f.getName()); }
+        if (!dir.isDirectory()) dir.mkdirs();
+        List<File> packages = new ArrayList<>();
+        File[] entries = dir.listFiles();
+        if (entries != null) {
+            for (File entry : entries) {
+                if (entry.isDirectory() && new File(entry, "addon.json").isFile()) packages.add(entry);
             }
         }
-        String msg = lines.isEmpty() ? "Nessun pacchetto installato." : android.text.TextUtils.join("\n", lines);
-        new AlertDialog.Builder(this).setTitle("I miei Add-on").setMessage(msg).setPositiveButton("OK", null).show();
+        packages.sort((a, b) -> {
+            try {
+                JSONObject ja = readAddonMetadata(a);
+                JSONObject jb = readAddonMetadata(b);
+                return ja.optString("name", a.getName()).compareToIgnoreCase(jb.optString("name", b.getName()));
+            } catch (Exception ignored) { return a.getName().compareToIgnoreCase(b.getName()); }
+        });
+
+        int screenWidthDp = (int) (getResources().getDisplayMetrics().widthPixels /
+                getResources().getDisplayMetrics().density);
+        int columns = screenWidthDp >= 900 ? 4 : screenWidthDp >= 600 ? 3 : 2;
+        int availableWidth = Math.min(dp(980), getResources().getDisplayMetrics().widthPixels - dp(40));
+        int cardWidth = Math.max(dp(132), (availableWidth - dp(12) * (columns - 1)) / columns);
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(14), dp(8), dp(14), dp(8));
+        TextView count = text(packages.size() + " ADD-ON IMPORTATI", 12, Color.rgb(143, 205, 255), true);
+        count.setLetterSpacing(0.10f);
+        content.addView(count, lp(-1, -2));
+
+        if (packages.isEmpty()) {
+            TextView empty = text("Non hai ancora importato pacchetti. Scarica un add-on dal Catalogo Kodi oppure usa Installa da ZIP.", 15,
+                    Color.rgb(174, 188, 208), false);
+            LinearLayout.LayoutParams emptyLp = lp(-1, -2);
+            emptyLp.topMargin = dp(18);
+            content.addView(empty, emptyLp);
+        } else {
+            LinearLayout row = null;
+            for (int i = 0; i < packages.size(); i++) {
+                if (i % columns == 0) {
+                    row = new LinearLayout(this);
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    LinearLayout.LayoutParams rowLp = lp(-1, -2);
+                    rowLp.topMargin = dp(12);
+                    content.addView(row, rowLp);
+                }
+                File folder = packages.get(i);
+                JSONObject meta = readAddonMetadata(folder);
+                String name = meta.optString("name", folder.getName());
+                String version = meta.optString("version", "");
+                LinearLayout card = new LinearLayout(this);
+                card.setOrientation(LinearLayout.VERTICAL);
+                card.setGravity(Gravity.CENTER_HORIZONTAL);
+                card.setPadding(dp(10), dp(12), dp(10), dp(12));
+                card.setBackground(shape(PANEL, 16));
+
+                ImageView icon = new ImageView(this);
+                icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                File iconFile = findAddonIcon(folder, 0);
+                if (iconFile != null) {
+                    android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(iconFile.getAbsolutePath());
+                    if (bitmap != null) icon.setImageBitmap(bitmap);
+                }
+                if (icon.getDrawable() == null) {
+                    icon.setImageResource(android.R.drawable.ic_menu_view);
+                    icon.setColorFilter(Color.rgb(143, 205, 255));
+                    icon.setBackground(shape(Color.rgb(31, 62, 91), 14));
+                    icon.setPadding(dp(24), dp(24), dp(24), dp(24));
+                }
+                card.addView(icon, lp(dp(104), dp(104)));
+
+                TextView title = text(name, 14, Color.WHITE, true);
+                title.setGravity(Gravity.CENTER);
+                title.setMaxLines(2);
+                LinearLayout.LayoutParams titleLp = lp(-1, -2);
+                titleLp.topMargin = dp(9);
+                card.addView(title, titleLp);
+
+                TextView ver = text(version.isEmpty() ? "Pacchetto importato" : "Versione " + version,
+                        11, Color.rgb(160, 179, 202), false);
+                ver.setGravity(Gravity.CENTER);
+                LinearLayout.LayoutParams verLp = lp(-1, -2);
+                verLp.topMargin = dp(4);
+                card.addView(ver, verLp);
+
+                LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(cardWidth, dp(190));
+                if (i % columns != 0) cardLp.leftMargin = dp(12);
+                row.addView(card, cardLp);
+                card.setOnClickListener(v -> showAddonDetails(folder));
+            }
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
+        new AlertDialog.Builder(this).setTitle("I miei Add-on")
+                .setView(scroll).setPositiveButton("Chiudi", null).show();
+    }
+
+    private JSONObject readAddonMetadata(File folder) {
+        try {
+            File metadata = new File(folder, "addon.json");
+            byte[] bytes = java.nio.file.Files.readAllBytes(metadata.toPath());
+            return new JSONObject(new String(bytes, "UTF-8"));
+        } catch (Exception ignored) {
+            JSONObject fallback = new JSONObject();
+            try { fallback.put("id", folder.getName()); fallback.put("name", folder.getName()); }
+            catch (Exception ignoredAgain) { }
+            return fallback;
+        }
+    }
+
+    private File findAddonIcon(File folder, int depth) {
+        if (folder == null || depth > 5) return null;
+        File[] files = folder.listFiles();
+        if (files == null) return null;
+        for (File file : files) {
+            if (!file.isFile()) continue;
+            String name = file.getName().toLowerCase(java.util.Locale.ROOT);
+            if (name.equals("icon.png") || name.equals("addon.png") || name.equals("logo.png")) return file;
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                File found = findAddonIcon(file, depth + 1);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private void showAddonDetails(File folder) {
+        JSONObject meta = readAddonMetadata(folder);
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(20), dp(12), dp(20), dp(8));
+        ImageView icon = new ImageView(this);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        File iconFile = findAddonIcon(folder, 0);
+        if (iconFile != null) {
+            android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(iconFile.getAbsolutePath());
+            if (bitmap != null) icon.setImageBitmap(bitmap);
+        }
+        if (icon.getDrawable() == null) icon.setImageResource(android.R.drawable.ic_menu_view);
+        LinearLayout.LayoutParams iconLp = lp(dp(112), dp(112));
+        iconLp.gravity = Gravity.CENTER_HORIZONTAL;
+        panel.addView(icon, iconLp);
+
+        String details = "ID: " + meta.optString("id", folder.getName()) +
+                "\nVersione: " + meta.optString("version", "—") +
+                "\nAutore: " + meta.optString("provider", "—") +
+                "\n\nPacchetto ZIP importato correttamente. La visualizzazione e la gestione sono disponibili; l'esecuzione degli add-on Kodi richiede ancora il relativo motore compatibile.";
+        TextView info = text(details, 14, Color.rgb(190, 203, 220), false);
+        LinearLayout.LayoutParams infoLp = lp(-1, -2);
+        infoLp.topMargin = dp(14);
+        panel.addView(info, infoLp);
+        new AlertDialog.Builder(this).setTitle(meta.optString("name", folder.getName()))
+                .setView(panel).setPositiveButton("Chiudi", null).show();
     }
 
 
