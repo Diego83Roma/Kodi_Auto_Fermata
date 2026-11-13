@@ -269,18 +269,66 @@ public class HomeActivity extends AppCompatActivity {
         return b;
     }
 
+    private File getKodiPackagesDirectory() {
+        File dir = new File(getFilesDir(), "kodi-packages");
+        if (!dir.isDirectory()) dir.mkdirs();
+        return dir;
+    }
+
+    private void collectZipFiles(File directory, List<File> output) {
+        File[] entries = directory.listFiles();
+        if (entries == null) return;
+        for (File entry : entries) {
+            if (entry.isDirectory()) collectZipFiles(entry, output);
+            else if (entry.isFile() && entry.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".zip")) {
+                output.add(entry);
+            }
+        }
+    }
+
     private void pickZip() {
-        // I provider Android usano MIME differenti per gli stessi archivi ZIP.
-        // Il wildcard evita che i pacchetti scaricati da browser o sorgenti vengano nascosti.
+        File packageDir = getKodiPackagesDirectory();
+        List<File> archives = new ArrayList<>();
+        collectZipFiles(packageDir, archives);
+        java.util.Collections.sort(archives, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+
+        List<String> labels = new ArrayList<>();
+        for (File archive : archives) {
+            String relative = archive.getAbsolutePath().substring(packageDir.getAbsolutePath().length());
+            labels.add(archive.getName() + "  ·  " +
+                    android.text.format.Formatter.formatShortFileSize(this, archive.length()) + relative);
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labels);
+        ListView list = new ListView(this);
+        list.setAdapter(adapter);
+        TextView empty = text("Nessun pacchetto ZIP scaricato. Puoi importare un file dal telefono: verrà copiato qui.", 14,
+                Color.rgb(170, 185, 205), false);
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(12), dp(8), dp(12), dp(8));
+        if (archives.isEmpty()) panel.addView(empty, lp(-1, -2));
+        else panel.addView(list, lp(-1, dp(360)));
+
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Pacchetti ZIP scaricati")
+                .setView(panel)
+                .setPositiveButton("Importa dal telefono", (d, w) -> pickZipFromPhone())
+                .setNegativeButton("Chiudi", null).create();
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            File selected = archives.get(position);
+            dialog.dismiss();
+            new Thread(() -> importZip(Uri.fromFile(selected))).start();
+        });
+        dialog.show();
+    }
+
+    private void pickZipFromPhone() {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         i.addCategory(Intent.CATEGORY_OPENABLE);
         i.setType("*/*");
         i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                "application/zip",
-                "application/x-zip",
-                "application/x-zip-compressed",
-                "application/octet-stream",
-                "application/x-compressed"
+                "application/zip", "application/x-zip", "application/x-zip-compressed",
+                "application/octet-stream", "application/x-compressed"
         });
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(i, PICK_ADDON_ZIP);
@@ -293,7 +341,28 @@ public class HomeActivity extends AppCompatActivity {
         try {
             getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         } catch (Exception ignored) { }
-        new Thread(() -> importZip(uri)).start();
+        new Thread(() -> {
+            File imported = new File(getKodiPackagesDirectory(), "imported-" + System.currentTimeMillis() + ".zip");
+            try (InputStream in = getContentResolver().openInputStream(uri);
+                 FileOutputStream out = new FileOutputStream(imported)) {
+                if (in == null) throw new Exception("Impossibile leggere il file selezionato");
+                byte[] buffer = new byte[16384];
+                int count;
+                long total = 0;
+                while ((count = in.read(buffer)) != -1) {
+                    total += count;
+                    if (total > 100L * 1024 * 1024) throw new Exception("ZIP oltre il limite di 100 MB");
+                    out.write(buffer, 0, count);
+                }
+                out.getFD().sync();
+                importZip(Uri.fromFile(imported));
+            } catch (Exception e) {
+                if (imported.exists()) imported.delete();
+                runOnUiThread(() -> new AlertDialog.Builder(this).setTitle("Importazione non riuscita")
+                        .setMessage(e.getMessage() == null ? "Impossibile copiare il file ZIP" : e.getMessage())
+                        .setPositiveButton("OK", null).show());
+            }
+        }).start();
     }
 
     private void importZip(Uri uri) {
