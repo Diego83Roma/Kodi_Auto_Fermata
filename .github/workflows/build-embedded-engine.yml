@@ -77,10 +77,17 @@ jobs:
           test -s fermata/src/main/jniLibs/arm64-v8a/libkodi.so
           test -s fermata/src/main/assets/kodi_engine/system/addon-manifest.xml
           test -s fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          test -s fermata/src/main/java/org/xbmc/kodi/Main.java
+          test -s fermata/src/main/java/org/xbmc/kodi/XBMCMainView.java
+          test -s fermata/src/main/java/org/xbmc/kodi/XBMCSettingsContentObserver.java
+          test -s fermata/src/main/java/org/xbmc/kodi/XBMCInputDeviceListener.java
+          grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
+          grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
+          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
           grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
           grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
           ! grep -q 'org.xbmc.kodi' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
-          echo "Payload nativo e assets Kodi incorporati nell'APK Fermata; bootstrap NativeActivity/bridge Python ancora da collegare."
+          echo "Kodi ARM64 payload + NativeActivity JNI host + surface/settings/input bridges verified."
 
       - name: Build modern TEST Android App Bundle
         run: |
