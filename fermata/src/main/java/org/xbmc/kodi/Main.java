@@ -26,7 +26,14 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private static final String DIAG_PREFS = "kodi_engine_state";
 
  private void diag(String stage, Throwable error) {
-  String detail = error == null ? "" : error.getClass().getName() + ": " + error.getMessage();
+  String detail = "";
+  if (error != null) {
+   try {
+    java.io.StringWriter sw = new java.io.StringWriter();
+    error.printStackTrace(new java.io.PrintWriter(sw));
+    detail = sw.toString();
+   } catch (Throwable ignored) { detail = error.getClass().getName() + ": " + error.getMessage(); }
+  }
   try {
    getSharedPreferences(DIAG_PREFS, MODE_PRIVATE).edit()
     .putString("last_stage", stage).putString("last_error", detail)
@@ -94,9 +101,17 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   diag("02 Percorsi Kodi impostati", null);
   try {
    recordNativeLibraryDiagnostics();
-   diag("03 System.loadLibrary(kodi): avvio", null);
-   System.loadLibrary("kodi");
-   diag("04 Libreria JNI Kodi caricata", null);
+   java.io.File kodiLib = new java.io.File(getApplicationInfo().nativeLibraryDir, System.mapLibraryName("kodi"));
+   diag("03A Verifica libkodi.so: " + kodiLib.getAbsolutePath()
+    + " | exists=" + kodiLib.isFile() + " | readable=" + kodiLib.canRead()
+    + " | bytes=" + kodiLib.length(), null);
+   if (!kodiLib.isFile() || !kodiLib.canRead()) {
+    throw new UnsatisfiedLinkError("libkodi.so non accessibile: " + kodiLib
+     + " | exists=" + kodiLib.exists() + " | readable=" + kodiLib.canRead());
+   }
+   diag("03B System.load(percorso assoluto libkodi.so): avvio", null);
+   System.load(kodiLib.getAbsolutePath());
+   diag("04 Libreria JNI Kodi caricata da percorso assoluto", null);
   } catch (Throwable e) {
    diag("ERRORE 03 caricamento libreria JNI Kodi", e);
    throw new RuntimeException("Caricamento della libreria Kodi non riuscito", e);
