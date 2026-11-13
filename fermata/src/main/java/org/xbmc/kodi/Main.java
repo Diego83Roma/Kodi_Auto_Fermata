@@ -101,25 +101,15 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   diag("02 Percorsi Kodi impostati", null);
   try {
    recordNativeLibraryDiagnostics();
-   java.io.File kodiLib = new java.io.File(getApplicationInfo().nativeLibraryDir, System.mapLibraryName("kodi"));
-   diag("03A Verifica libkodi.so: " + kodiLib.getAbsolutePath()
-    + " | exists=" + kodiLib.isFile() + " | readable=" + kodiLib.canRead()
-    + " | bytes=" + kodiLib.length(), null);
-   if (!kodiLib.isFile() || !kodiLib.canRead()) {
-    throw new UnsatisfiedLinkError("libkodi.so non accessibile: " + kodiLib
-     + " | exists=" + kodiLib.exists() + " | readable=" + kodiLib.canRead());
-   }
-   diag("03B System.load(percorso assoluto libkodi.so): avvio", null);
-   System.load(kodiLib.getAbsolutePath());
-   diag("04 Libreria JNI Kodi caricata da percorso assoluto", null);
+   diag("03 Libreria Kodi verificata: caricamento affidato a NativeActivity Android", null);
   } catch (Throwable e) {
    diag("ERRORE 03 caricamento libreria JNI Kodi", e);
    throw new RuntimeException("Caricamento della libreria Kodi non riuscito", e);
   }
   try {
-   diag("05 NativeActivity.super.onCreate: avvio", null);
+   diag("04 NativeActivity.super.onCreate: avvio caricamento nativo standard Android (lib_name=kodi)", null);
    super.onCreate(state);
-   diag("06 NativeActivity.super.onCreate: completato", null);
+   diag("05 NativeActivity.super.onCreate: completato; libreria e ANativeActivity avviate", null);
    getWindow().takeSurface(null);
    decor = getWindow().getDecorView();
    decor.setBackground(null);
@@ -137,7 +127,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    applyImmersive();
    diag("07 Main.onCreate completato", null);
   } catch (Throwable e) {
-   diag("ERRORE 05-07 inizializzazione Activity/UI", e);
+   diag("ERRORE 04-07 caricamento NativeActivity o inizializzazione UI", e);
    throw new RuntimeException("Inizializzazione Activity/UI Kodi non riuscita", e);
   }
  }
