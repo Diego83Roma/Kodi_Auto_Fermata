@@ -82,6 +82,15 @@
             android:value="me.aap.fermata.addon.cast.CastOptionsProvider" />
 
         <activity
+            android:name="me.aap.fermata.ui.activity.AddonLibraryActivity"
+            android:exported="false"
+            android:resizeableActivity="true" />
+        <activity
+            android:name="me.aap.fermata.ui.activity.SourceBrowserActivity"
+            android:exported="false"
+            android:resizeableActivity="true" />
+
+        <activity
             android:name="me.aap.fermata.ui.activity.HomeActivity"
             android:exported="true"
             android:launchMode="singleTop"
