@@ -155,7 +155,7 @@ public final class KodiAddonPackageManager {
                     throw new java.io.IOException("Archivio con troppi file");
                 }
                 if (entry.isDirectory()) continue;
-                String name = entry.getName().replace('\\\\', '/');
+                String name = entry.getName().replace((char) 92, '/');
                 if (name.startsWith("/") || name.contains("../") || name.equals("..")
                         || name.contains("/..") || name.matches("^[A-Za-z]:.*")) {
                     throw new java.io.IOException("Percorso non sicuro nell'archivio ZIP");
