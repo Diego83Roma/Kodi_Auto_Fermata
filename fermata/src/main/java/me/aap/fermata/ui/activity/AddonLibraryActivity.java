@@ -106,7 +106,7 @@ public class AddonLibraryActivity extends AppCompatActivity {
         LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(16);page.addView(title,tp);
         TextView info=text("ID: "+meta.optString("id",folder.getName())+"\nVersione: "+meta.optString("version","—")+"\nAutore: "+meta.optString("provider","—"),15,Color.rgb(190,203,220),false);
         LinearLayout.LayoutParams infoLp=new LinearLayout.LayoutParams(-1,-2);infoLp.topMargin=dp(18);page.addView(info,infoLp);
-        TextView status=text("Pacchetto ZIP importato e verificato. Per eseguirlo serve il motore Kodi: Fermata resta separata e non esegue codice add-on al suo interno.",14,Color.rgb(174,188,208),false);
+        TextView status=text("Pacchetto importato. Il core Kodi ARM64 e le risorse sono inclusi nell’app e vengono predisposti in un ambiente privato separato. Il collegamento NativeActivity e le API Python xbmc.* sono ancora in integrazione.",14,Color.rgb(174,188,208),false);
         LinearLayout.LayoutParams st=new LinearLayout.LayoutParams(-1,-2);st.topMargin=dp(22);page.addView(status,st);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(24);page.addView(button("Avvia motore add-on interno",()->startInternalEngine(folder,meta),true),bp);
         LinearLayout.LayoutParams backLp=new LinearLayout.LayoutParams(-1,-2);backLp.topMargin=dp(10);page.addView(button("Torna alla libreria",this::showLibrary,false),backLp);
@@ -119,7 +119,7 @@ public class AddonLibraryActivity extends AppCompatActivity {
         try {
             startService(intent);
             Toast.makeText(this,
-                    "Ambiente isolato predisposto. Il runtime Kodi completo è ancora da integrare: nessun Kodi esterno verrà aperto.",
+                    "Core Kodi e risorse predisposti nell’ambiente isolato. Avvio add-on non ancora abilitato: manca il bridge Android/Python. Nessun Kodi esterno viene aperto.",
                     Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Impossibile preparare l'ambiente add-on: " +
