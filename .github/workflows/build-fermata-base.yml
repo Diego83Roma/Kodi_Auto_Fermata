@@ -9,6 +9,7 @@ on:
       - kodi-auto-fermata-zip-import-test
       - kodi-auto-fermata-shared-zip-folder
       - kodi-auto-fermata-addon-library
+      - kodi-auto-fermata-addon-screen-engine
     paths:
       - 'fermata/**'
       - 'modules/**'
