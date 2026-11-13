@@ -30,6 +30,7 @@ import me.aap.fermata.addon.KodiRepositoryClient;
 import me.aap.fermata.addon.KodiAddonPackageManager;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -127,9 +128,11 @@ public class HomeActivity extends AppCompatActivity {
 
         addSection("CONTENUTI");
         addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
-        addTile("Libreria", "Cartelle e contenuti multimediali", "Sfoglia i contenuti con Fermata", () -> openFermataScreen(R.id.folders_fragment));
         addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
         addTile("Playlist", "Le tue raccolte personalizzate", "Apri le playlist di Fermata", () -> openFermataScreen(R.id.playlists_fragment));
+
+        addSection("GESTIONE FILE");
+        addTile("Sorgenti file", "Collegamenti a cartelle e archivi remoti", "Crea, modifica, apri o elimina una sorgente", this::showFileSources);
 
         addSection("ADD-ON E REPOSITORY");
         addTile("Installa da ZIP", "Aggiungi un pacchetto compatibile", "Seleziona un file ZIP dalla memoria", this::pickZip);
@@ -357,6 +360,105 @@ public class HomeActivity extends AppCompatActivity {
         }
         String msg = lines.isEmpty() ? "Nessun pacchetto installato." : android.text.TextUtils.join("\n", lines);
         new AlertDialog.Builder(this).setTitle("I miei Add-on").setMessage(msg).setPositiveButton("OK", null).show();
+    }
+
+
+    private JSONArray readFileSources() {
+        String raw = getSharedPreferences("kodi_file_sources", MODE_PRIVATE).getString("sources", "[]");
+        try { return new JSONArray(raw); } catch (Exception ignored) { return new JSONArray(); }
+    }
+
+    private void saveFileSources(JSONArray sources) {
+        getSharedPreferences("kodi_file_sources", MODE_PRIVATE).edit()
+                .putString("sources", sources.toString()).apply();
+    }
+
+    private void showFileSources() {
+        JSONArray sources = readFileSources();
+        List<String> labels = new ArrayList<>();
+        for (int i = 0; i < sources.length(); i++) {
+            JSONObject item = sources.optJSONObject(i);
+            if (item != null) labels.add(item.optString("name", "Sorgente") + "\n" + item.optString("url", ""));
+        }
+        ListView list = new ListView(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labels);
+        list.setAdapter(adapter);
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(12), dp(8), dp(12), dp(8));
+        Button add = button("＋ Aggiungi sorgente", () -> editFileSource(-1));
+        panel.addView(add, lp(-1, -2));
+        panel.addView(list, lp(-1, dp(320)));
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Gestione file")
+                .setView(panel).setNegativeButton("Chiudi", null).create();
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            JSONObject item = readFileSources().optJSONObject(position);
+            if (item == null) return;
+            String name = item.optString("name", "Sorgente");
+            String url = item.optString("url", "");
+            new AlertDialog.Builder(this).setTitle(name)
+                    .setItems(new String[]{"Apri sorgente", "Modifica", "Elimina"}, (d, which) -> {
+                        if (which == 0) {
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+                            catch (Exception e) { Toast.makeText(this, "Impossibile aprire la sorgente", Toast.LENGTH_SHORT).show(); }
+                        } else if (which == 1) editFileSource(position);
+                        else new AlertDialog.Builder(this).setTitle("Eliminare la sorgente?")
+                                .setMessage(name).setNegativeButton("Annulla", null)
+                                .setPositiveButton("Elimina", (dd, ww) -> {
+                                    JSONArray updated = readFileSources();
+                                    JSONArray kept = new JSONArray();
+                                    for (int i = 0; i < updated.length(); i++) if (i != position) kept.put(updated.opt(i));
+                                    saveFileSources(kept);
+                                    showFileSources();
+                                }).show();
+                    }).show();
+        });
+        dialog.show();
+    }
+
+    private void editFileSource(int index) {
+        JSONArray sources = readFileSources();
+        JSONObject old = index >= 0 ? sources.optJSONObject(index) : null;
+        EditText name = new EditText(this);
+        name.setSingleLine(true);
+        name.setHint("Nome sorgente");
+        EditText url = new EditText(this);
+        url.setSingleLine(true);
+        url.setHint("https://server/percorso/cartella/");
+        if (old != null) {
+            name.setText(old.optString("name", ""));
+            url.setText(old.optString("url", ""));
+        }
+        LinearLayout fields = new LinearLayout(this);
+        fields.setOrientation(LinearLayout.VERTICAL);
+        fields.setPadding(dp(18), dp(8), dp(18), dp(8));
+        fields.addView(name, lp(-1, -2));
+        fields.addView(url, lp(-1, -2));
+        new AlertDialog.Builder(this).setTitle(index < 0 ? "Aggiungi sorgente" : "Modifica sorgente")
+                .setView(fields).setNegativeButton("Annulla", null)
+                .setPositiveButton("Salva", (d, w) -> {
+                    String n = name.getText().toString().trim();
+                    String u = url.getText().toString().trim();
+                    Uri parsed = Uri.parse(u);
+                    if (n.isEmpty() || !("https".equalsIgnoreCase(parsed.getScheme())
+                            || "http".equalsIgnoreCase(parsed.getScheme())) || parsed.getHost() == null) {
+                        new AlertDialog.Builder(this).setMessage("Inserisci un nome e un indirizzo HTTP/HTTPS valido.")
+                                .setPositiveButton("OK", null).show();
+                        return;
+                    }
+                    JSONArray updated = readFileSources();
+                    JSONObject value = new JSONObject();
+                    try { value.put("name", n); value.put("url", u); } catch (Exception ignored) { }
+                    if (index < 0) updated.put(value);
+                    else {
+                        JSONArray replaced = new JSONArray();
+                        for (int i = 0; i < updated.length(); i++) replaced.put(i == index ? value : updated.opt(i));
+                        updated = replaced;
+                    }
+                    saveFileSources(updated);
+                    Toast.makeText(this, "Sorgente salvata", Toast.LENGTH_SHORT).show();
+                    showFileSources();
+                }).show();
     }
 
     private void manageRepositories() {
