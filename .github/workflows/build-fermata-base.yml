@@ -8,6 +8,7 @@ on:
       - kodi-auto-fermata-modern-integration
       - kodi-auto-fermata-zip-import-test
       - kodi-auto-fermata-shared-zip-folder
+      - kodi-auto-fermata-addon-library
     paths:
       - 'fermata/**'
       - 'modules/**'
