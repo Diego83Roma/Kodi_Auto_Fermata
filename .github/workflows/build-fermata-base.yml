@@ -67,7 +67,11 @@ jobs:
           grep -q 'archiveOriginalPackage(uri, id, version)' fermata/src/main/java/me/aap/fermata/ui/activity/HomeActivity.java
           grep -q 'SourceBrowserActivity' fermata/src/main/AndroidManifest.xml
           grep -q 'AddonLibraryActivity' fermata/src/main/AndroidManifest.xml
-          echo "Schermata add-on, download ZIP privato e apertura Kodi separata presenti."
+          test -s fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
+          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
+          grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          ! grep -q 'org.xbmc.kodi' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
+          echo "Libreria add-on, browser sorgenti e bootstrap isolato verificati; nessun handoff al Kodi esterno."
 
       - name: Build modern TEST Android App Bundle
         run: |
