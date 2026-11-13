@@ -131,7 +131,7 @@ public final class KodiAddonEngineService extends Service {
     }
     private void writeAutoexec(File file, String id) throws IOException {
         ensureDirectory(file.getParentFile());
-        String script = "import xbmc\\ntry:\\n    xbmc.log('Fermata: avvio add-on " + id + "', xbmc.LOGINFO)\\n    xbmc.executebuiltin('RunAddon(" + id + ")')\\nexcept Exception as exc:\\n    xbmc.log('Fermata: errore avvio add-on: %s' % exc, xbmc.LOGERROR)\\n";
+        String script = "import xbmc\ntry:\n    xbmc.log('Fermata: avvio add-on " + id + "', xbmc.LOGINFO)\n    xbmc.executebuiltin('RunAddon(" + id + ")')\nexcept Exception as exc:\n    xbmc.log('Fermata: errore avvio add-on: %s' % exc, xbmc.LOGERROR)\n";
         try (OutputStream out = new FileOutputStream(file, false)) { out.write(script.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     }
     private void copyDirectory(File source, File dest) throws IOException {
