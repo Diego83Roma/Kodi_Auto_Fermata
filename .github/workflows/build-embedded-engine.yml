@@ -1,5 +1,9 @@
 name: Build Kodi Auto Fermata Embedded Engine TEST APK
 
+concurrency:
+  group: kodi-auto-fermata-embedded-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
