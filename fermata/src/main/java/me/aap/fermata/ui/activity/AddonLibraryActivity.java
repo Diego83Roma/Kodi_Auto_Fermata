@@ -3,6 +3,7 @@ package me.aap.fermata.ui.activity;
 import android.content.ContentValues;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
