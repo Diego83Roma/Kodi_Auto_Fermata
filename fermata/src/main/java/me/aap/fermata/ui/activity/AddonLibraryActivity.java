@@ -34,6 +34,8 @@ import java.util.List;
 public class AddonLibraryActivity extends AppCompatActivity {
     private static final int BG = Color.rgb(12,17,29), PANEL = Color.rgb(25,34,52);
     private LinearLayout page;
+    private TextView engineStatus;
+    private Button launchButton;
     private boolean engineReceiverRegistered;
     private final BroadcastReceiver engineReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -75,6 +77,7 @@ public class AddonLibraryActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(KodiAddonEngineService.ACTION_READY);
         filter.addAction(KodiAddonEngineService.ACTION_FAILED);
+        filter.addAction(KodiAddonEngineService.ACTION_PROGRESS);
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(engineReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         else registerReceiver(engineReceiver, filter);
         engineReceiverRegistered = true;
