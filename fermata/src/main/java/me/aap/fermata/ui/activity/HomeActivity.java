@@ -27,6 +27,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import me.aap.fermata.R;
 import me.aap.fermata.addon.KodiRepositoryClient;
+import me.aap.fermata.addon.KodiAddonPackageManager;
 
 import org.json.JSONObject;
 
@@ -476,12 +477,48 @@ public class HomeActivity extends AppCompatActivity {
                     + addon.description
                     + "\n\nPacchetto trovato nel repository. L'esecuzione degli add-on Kodi richiede ancora il runtime Kodi e non è attiva in questa versione.";
             new AlertDialog.Builder(this).setTitle(addon.name).setMessage(details)
-                    .setPositiveButton("OK", null).show();
+                    .setPositiveButton("Scarica e verifica ZIP", (d, w) -> downloadKodiAddon(addon))
+                    .setNegativeButton("Chiudi", null).show();
         });
         dialog.show();
         if (!errors.isEmpty()) {
             Toast.makeText(this, "Catalogo parziale: " + errors.size() + " repository non letti", Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void downloadKodiAddon(KodiRepositoryClient.Addon addon) {
+        Toast.makeText(this, "Download e verifica pacchetto Kodi…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                KodiAddonPackageManager.Result result =
+                        KodiAddonPackageManager.downloadAndValidate(getApplicationContext(), addon);
+                StringBuilder message = new StringBuilder();
+                message.append("Pacchetto scaricato e manifest Kodi verificato.\\n");
+                message.append("ID: ").append(result.id).append("\\n");
+                message.append("Versione nel pacchetto: ").append(result.version).append("\\n");
+                message.append("Dimensione: ").append(result.archive.length() / 1024).append(" KB\\n\\n");
+                if (result.dependencies.isEmpty()) {
+                    message.append("Dipendenze dichiarate: nessuna.");
+                } else {
+                    message.append("Dipendenze dichiarate (").append(result.dependencies.size()).append("):\\n");
+                    for (KodiAddonPackageManager.Dependency dependency : result.dependencies) {
+                        message.append("• ").append(dependency.toString()).append("\\n");
+                    }
+                }
+                message.append("\\nIl pacchetto è conservato nell'area privata dell'app. Non è ancora installato né eseguito: prima va preparato il runtime compatibile.");
+                String report = message.toString();
+                runOnUiThread(() -> new AlertDialog.Builder(this)
+                        .setTitle("Pacchetto verificato")
+                        .setMessage(report)
+                        .setPositiveButton("OK", null).show());
+            } catch (Exception e) {
+                String error = e.getMessage() == null ? "Errore durante il download o la verifica" : e.getMessage();
+                runOnUiThread(() -> new AlertDialog.Builder(this)
+                        .setTitle("Download non completato")
+                        .setMessage(error)
+                        .setPositiveButton("OK", null).show());
+            }
+        }).start();
     }
 
     private void deleteTree(File f) {
