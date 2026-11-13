@@ -38,13 +38,12 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   InputManager manager=(InputManager)getSystemService(INPUT_SERVICE);
   manager.registerInputDeviceListener(inputListener,handler);
   applyImmersive(); diag("Main.onCreate completato", null);}
- @Override protected void onStart(){super.onStart();diag("Main.onStart", null);}
  @Override protected void onPause(){diag("Main.onPause", null);super.onPause();}
  @Override protected void onStop(){diag("Main.onStop", null);super.onStop();}
  private void applyImmersive(){if(Build.VERSION.SDK_INT>=30){getWindow().setDecorFitsSystemWindows(false);WindowInsetsController c=getWindow().getInsetsController();if(c!=null){c.hide(WindowInsets.Type.statusBars()|WindowInsets.Type.navigationBars());c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);}}else{decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}}
  public Rect getDisplayRect(){Rect r=new Rect();if(decor!=null){r.right=decor.getRootView().getWidth();r.bottom=decor.getRootView().getHeight();}return r;}
  private void runNativeOnUiThread(long funcAddr,long variantAddr){runOnUiThread(()->_callNative(funcAddr,variantAddr));}
- @Override public void onStart(){super.onStart();Choreographer.getInstance().removeFrameCallback(this);Choreographer.getInstance().postFrameCallback(this);}
+ @Override public void onStart(){super.onStart();diag("Main.onStart", null);Choreographer.getInstance().removeFrameCallback(this);Choreographer.getInstance().postFrameCallback(this);}
  @Override public void doFrame(long time){if(!shuttingDown){Choreographer.getInstance().postFrameCallback(this);_doFrame(time);}}
  @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);_onNewIntent(intent);}
  @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);_onActivityResult(request,result,data);}
