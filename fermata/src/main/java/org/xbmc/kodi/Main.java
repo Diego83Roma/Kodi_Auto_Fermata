@@ -85,7 +85,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    diag("07 Main.onCreate completato", null);
   } catch (Throwable e) {
    diag("ERRORE 05-07 inizializzazione Activity/UI", e);
-   throw e;
+   throw new RuntimeException("Inizializzazione Activity/UI Kodi non riuscita", e);
   }
  }
 
