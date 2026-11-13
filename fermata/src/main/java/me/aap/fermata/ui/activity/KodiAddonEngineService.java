@@ -90,7 +90,6 @@ public final class KodiAddonEngineService extends Service {
     }
 
     private void copyAssetTree(AssetManager assets, String assetPath, File destination) throws IOException {
-        ensureDirectory(destination);
         String[] children = assets.list(assetPath);
         if (children == null || children.length == 0) {
             File parent = destination.getParentFile();
@@ -100,6 +99,7 @@ public final class KodiAddonEngineService extends Service {
             }
             return;
         }
+        ensureDirectory(destination);
         for (String child : children) {
             copyAssetTree(assets, assetPath + "/" + child, new File(destination, child));
         }
