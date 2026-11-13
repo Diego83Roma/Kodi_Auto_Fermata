@@ -179,6 +179,8 @@ public class HomeActivity extends AppCompatActivity {
         root.addView(hero, heroLp);
 
         addKodiLauncherTile();
+        addSection("DIAGNOSTICA");
+        addTile("Diagnostica Kodi", "Controlla dove si interrompe l'avvio del motore", "Visualizza ultimo checkpoint", this::showKodiDiagnostics);
 
         addSection("CONTENUTI");
         addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
@@ -233,6 +235,34 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayout.LayoutParams cp = lp(-1, -2);
         cp.bottomMargin = dp(20);
         root.addView(card, cp);
+    }
+
+
+    private void showKodiDiagnostics() {
+        android.content.SharedPreferences prefs = getSharedPreferences("kodi_engine_state", MODE_PRIVATE);
+        String stage = prefs.getString("last_stage", "Nessun avvio Kodi registrato");
+        String error = prefs.getString("last_error", "");
+        long when = prefs.getLong("last_stage_time", 0L);
+        String time = when == 0L ? "mai" : android.text.format.DateFormat.format("dd/MM/yyyy HH:mm:ss", when).toString();
+        File nativeLib = new File(getApplicationInfo().nativeLibraryDir, "libkodi.so");
+        File runtime = new File(getFilesDir(), "apk");
+        String report = "Ultima fase raggiunta:\n" + stage
+                + "\n\nErrore Java:\n" + (error.isEmpty() ? "nessuno registrato" : error)
+                + "\n\nUltimo aggiornamento: " + time
+                + "\n\nABI dispositivo: " + android.os.Build.SUPPORTED_ABIS[0]
+                + "\nLibreria Kodi presente: " + nativeLib.exists()
+                + "\nRuntime Kodi presente: " + runtime.exists()
+                + "\nPercorso runtime: " + runtime.getAbsolutePath()
+                + "\n\nInvia questa schermata/testo per individuare il punto esatto del blocco.";
+        new AlertDialog.Builder(this).setTitle("Diagnostica avvio Kodi")
+                .setMessage(report)
+                .setPositiveButton("Copia rapporto", (d, w) -> {
+                    android.content.ClipboardManager clipboard =
+                            (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Diagnostica Kodi", report));
+                    Toast.makeText(this, "Rapporto copiato", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Chiudi", null).show();
     }
 
     private void openBuiltInAddon(int fragmentId) {
