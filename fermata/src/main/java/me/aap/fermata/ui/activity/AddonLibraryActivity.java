@@ -108,28 +108,21 @@ public class AddonLibraryActivity extends AppCompatActivity {
         LinearLayout.LayoutParams infoLp=new LinearLayout.LayoutParams(-1,-2);infoLp.topMargin=dp(18);page.addView(info,infoLp);
         TextView status=text("Pacchetto ZIP importato e verificato. Per eseguirlo serve il motore Kodi: Fermata resta separata e non esegue codice add-on al suo interno.",14,Color.rgb(174,188,208),false);
         LinearLayout.LayoutParams st=new LinearLayout.LayoutParams(-1,-2);st.topMargin=dp(22);page.addView(status,st);
-        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(24);page.addView(button("Apri / installa con Kodi separato",()->handoffToKodi(folder,meta),true),bp);
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(24);page.addView(button("Avvia motore add-on interno",()->startInternalEngine(folder,meta),true),bp);
         LinearLayout.LayoutParams backLp=new LinearLayout.LayoutParams(-1,-2);backLp.topMargin=dp(10);page.addView(button("Torna alla libreria",this::showLibrary,false),backLp);
     }
-    private void handoffToKodi(File folder,JSONObject meta) {
-        String id=meta.optString("id",folder.getName()),version=meta.optString("version","unknown").replaceAll("[^A-Za-z0-9._-]","_");
-        File archive=new File(new File(getFilesDir(),"kodi-packages/"+id),version+".zip");
-        if(!archive.isFile()){Toast.makeText(this,"ZIP originale non trovato. Reimporta il pacchetto per preparare l'apertura con Kodi.",Toast.LENGTH_LONG).show();return;}
-        try{
-            ContentValues values=new ContentValues();values.put(MediaStore.Downloads.DISPLAY_NAME,archive.getName());values.put(MediaStore.Downloads.MIME_TYPE,"application/zip");
-            values.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/Kodi Auto Fermata");values.put(MediaStore.Downloads.IS_PENDING,1);
-            Uri output=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);if(output==null)throw new Exception("Impossibile preparare il pacchetto per Kodi");
-            try(FileInputStream in=new FileInputStream(archive);OutputStream out=getContentResolver().openOutputStream(output,"w")){
-                if(out==null)throw new Exception("Impossibile esportare il pacchetto");byte[] buf=new byte[16384];int n;while((n=in.read(buf))!=-1)out.write(buf,0,n);
-            }
-            ContentValues ready=new ContentValues();ready.put(MediaStore.Downloads.IS_PENDING,0);getContentResolver().update(output,ready,null,null);
-            Intent open=new Intent(Intent.ACTION_VIEW);open.setDataAndType(output,"application/zip");open.setPackage("org.xbmc.kodi");open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            if(open.resolveActivity(getPackageManager())!=null)startActivity(open);
-            else{
-                Intent launch=getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
-                if(launch==null)Toast.makeText(this,"Kodi non risulta installato. ZIP esportato in Download/Kodi Auto Fermata.",Toast.LENGTH_LONG).show();
-                else{startActivity(launch);Toast.makeText(this,"ZIP esportato in Download/Kodi Auto Fermata. In Kodi usa Add-on > Installa da un file ZIP.",Toast.LENGTH_LONG).show();}
-            }
-        }catch(Exception e){Toast.makeText(this,"Apertura separata non riuscita: "+(e.getMessage()==null?"errore":e.getMessage()),Toast.LENGTH_LONG).show();}
-    }
-}
+    private void startInternalEngine(File folder, JSONObject meta) {
+        Intent intent = new Intent(this, KodiAddonEngineService.class);
+        intent.putExtra(KodiAddonEngineService.EXTRA_ADDON_ID,
+                meta.optString("id", folder.getName()));
+        intent.putExtra(KodiAddonEngineService.EXTRA_ADDON_PATH, folder.getAbsolutePath());
+        try {
+            startService(intent);
+            Toast.makeText(this,
+                    "Ambiente isolato predisposto. Il runtime Kodi completo è ancora da integrare: nessun Kodi esterno verrà aperto.",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Impossibile preparare l'ambiente add-on: " +
+                    (e.getMessage() == null ? "errore" : e.getMessage()), Toast.LENGTH_LONG).show();
+        }
+    }}
