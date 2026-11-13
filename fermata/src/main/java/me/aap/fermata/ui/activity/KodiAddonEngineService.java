@@ -58,8 +58,11 @@ public final class KodiAddonEngineService extends Service {
 
                 if (addonId != null && addonPath != null) {
                     File source = new File(addonPath);
-                    File destination = new File(new File(kodiHome, "addons"), safeId(addonId));
+                    String selectedAddonId = safeId(addonId);
+                    File destination = new File(new File(root, "userdata/addons"), selectedAddonId);
+                    ensureDirectory(destination.getParentFile());
                     if (source.isDirectory()) copyDirectory(source, destination);
+                    writeAutoexec(new File(root, "userdata/autoexec.py"), selectedAddonId);
                 }
 
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
@@ -86,7 +89,7 @@ public final class KodiAddonEngineService extends Service {
     }
 
     private String safeId(String id) throws IOException {
-        if (id.isEmpty() || id.contains("/") || id.contains("\\") || id.equals(".") || id.equals(".."))
+        if (id.isEmpty() || !id.matches("[A-Za-z0-9._-]+") || id.equals(".") || id.equals(".."))
             throw new IOException("ID add-on non valido");
         return id;
     }
@@ -109,6 +112,20 @@ public final class KodiAddonEngineService extends Service {
         ensureDirectory(destination);
         for (String child : children) {
             copyAssetTree(assets, assetPath + "/" + child, new File(destination, child));
+        }
+    }
+
+    private void writeAutoexec(File file, String addonId) throws IOException {
+        File parent = file.getParentFile();
+        if (parent != null) ensureDirectory(parent);
+        String script = "import xbmc\\n" +
+                "try:\\n" +
+                "    xbmc.log('Fermata: avvio add-on " + addonId + "', xbmc.LOGINFO)\\n" +
+                "    xbmc.executebuiltin('RunAddon(" + addonId + ")')\\n" +
+                "except Exception as exc:\\n" +
+                "    xbmc.log('Fermata: errore avvio add-on: %s' % exc, xbmc.LOGERROR)\\n";
+        try (OutputStream out = new FileOutputStream(file, false)) {
+            out.write(script.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
     }
 
