@@ -83,8 +83,8 @@
 
         <activity
             android:name="org.xbmc.kodi.Main"
-            android:process=":kodi_addon_engine"
             android:exported="false"
+            android:launchMode="singleInstance"
             android:configChanges="orientation|keyboard|keyboardHidden|navigation|screenLayout|screenSize|smallestScreenSize|colorMode|uiMode"
             android:screenOrientation="sensorLandscape"
             android:resizeableActivity="true">
