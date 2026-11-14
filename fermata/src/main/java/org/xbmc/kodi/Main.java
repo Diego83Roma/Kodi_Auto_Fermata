@@ -268,6 +268,26 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
     .append(": ").append(t.getMessage()).append(")");
   }
   try {
+   Class<?> media = Class.forName("org.xbmc.kodi.XBMCMediaSession", true, loader);
+   java.lang.reflect.Constructor<?> ctor = media.getDeclaredConstructor();
+   String[] methods = {"_onPlayRequested", "_onPauseRequested", "_onNextRequested",
+    "_onPreviousRequested", "_onForwardRequested", "_onRewindRequested",
+    "_onStopRequested", "_onSeekRequested", "_onMediaButtonEvent"};
+   for (String name : methods) {
+    boolean found = false;
+    for (java.lang.reflect.Method method : media.getDeclaredMethods()) {
+     if (method.getName().equals(name)) { found = true; break; }
+    }
+    if (!found) throw new NoSuchMethodException(name);
+   }
+   out.append("; mediaSession=OK(").append(media.getName())
+    .append(", ctor=").append(java.lang.reflect.Modifier.toString(ctor.getModifiers()))
+    .append(", methods=").append(methods.length).append(")");
+  } catch (Throwable t) {
+   out.append("; mediaSession=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
    Class<?> main = Class.forName("org.xbmc.kodi.Main", false, loader);
    out.append("; kodiMain=OK(").append(main.getName()).append(")");
   } catch (Throwable t) {
