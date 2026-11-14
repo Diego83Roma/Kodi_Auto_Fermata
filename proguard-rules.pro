@@ -15,15 +15,5 @@
 -keepnames class androidx.media3.exoplayer.ExoPlayerImpl { *; }
 -keepnames class androidx.media3.exoplayer.ExoPlayerImplInternal { *; }
 
-# Kodi JNI creates this callback class dynamically through ClassLoader.loadClass/NewObject.
--keep class org.xbmc.kodi.interfaces.** { *; }
-
-# Kodi calls these methods by JNI name; R8 must not rename or remove them.
--keep class org.xbmc.kodi.Main { *; }
-
-# Kodi loads this Java bridge by its fully-qualified name from native JNI.
--keep class org.xbmc.kodi.XBMCMediaSession { *; }
-
-# Kodi resolves these Java bridges by their compiled package names via JNI.
--keep class org.xbmc.kodi.XBMCBroadcastReceiver { *; }
--keep class org.xbmc.kodi.interfaces.XBMCConnectivityManagerNetworkCallback { *; }
+# Kodi JNI resolves these classes and native method names at runtime.
+-keep class org.xbmc.kodi.** { *; }
