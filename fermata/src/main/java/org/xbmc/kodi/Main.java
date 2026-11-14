@@ -147,10 +147,13 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   diag("02 Percorsi Kodi impostati", null);
   try {
    recordNativeLibraryDiagnostics();
-   diag("03 Libreria Kodi verificata: caricamento affidato a NativeActivity Android", null);
+   diag("03 Libreria Kodi verificata", null);
+   diag("03A System.loadLibrary(kodi): avvio registrazione JNI_OnLoad", null);
+   System.loadLibrary("kodi");
+   diag("03B System.loadLibrary(kodi): JNI_OnLoad completato", null);
   } catch (Throwable e) {
-   diag("ERRORE 03 caricamento libreria JNI Kodi", e);
-   throw new RuntimeException("Caricamento della libreria Kodi non riuscito", e);
+   diag("ERRORE 03 System.loadLibrary(kodi) o registrazione JNI", e);
+   throw new RuntimeException("Caricamento della libreria Kodi o registrazione JNI non riuscita", e);
   }
   try {
    diag("04 NativeActivity.super.onCreate: avvio caricamento nativo standard Android (lib_name=kodi)", null);
