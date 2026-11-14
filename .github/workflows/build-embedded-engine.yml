@@ -107,7 +107,8 @@ jobs:
           test -s kodi/src/main/java/org/xbmc/kodi/RestartActivity.java
           test -s kodi/src/main/java/org/xbmc/kodi/content/XBMCFileProvider.java
           test -s kodi/src/main/java/org/xbmc/kodi/channels/SyncChannelJobService.java
-          grep -q 'android:name="org.xbmc.kodi.Main"' kodi/src/main/AndroidManifest.xml
+          grep -q 'android:name=".Main"' kodi/src/main/AndroidManifest.xml
+          grep -q 'android:name=".Splash"' kodi/src/main/AndroidManifest.xml
           grep -q 'android:value="kodi"' kodi/src/main/AndroidManifest.xml
           ! grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
           grep -q "implementation project(':kodi')" fermata/build.gradle
