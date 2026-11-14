@@ -23,3 +23,7 @@
 
 # Kodi loads this Java bridge by its fully-qualified name from native JNI.
 -keep class org.xbmc.kodi.XBMCMediaSession { *; }
+
+# Kodi resolves these Java bridges by their compiled package names via JNI.
+-keep class org.xbmc.kodi.XBMCBroadcastReceiver { *; }
+-keep class org.xbmc.kodi.interfaces.XBMCConnectivityManagerNetworkCallback { *; }
