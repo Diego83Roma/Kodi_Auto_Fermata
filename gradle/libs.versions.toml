@@ -10,7 +10,7 @@ googleServices = "4.5.0"
 # SDK
 sdkMin = "28"
 sdkTarget = "36"
-sdkCompile = "36"
+sdkCompile = "37"
 
 # NDK
 ndkVersion = "29.0.14206865"
