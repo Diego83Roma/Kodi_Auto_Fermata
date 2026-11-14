@@ -56,7 +56,7 @@ public class HomeActivity extends AppCompatActivity {
         @Override public void onReceive(android.content.Context context, Intent intent) {
             if (KodiAddonEngineService.ACTION_READY.equals(intent.getAction())) {
                 try {
-                    Intent launch = new Intent(HomeActivity.this, org.xbmc.kodi.Main.class);
+                    Intent launch = new Intent(HomeActivity.this, org.xbmc.kodi.Splash.class);
                     launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(launch);
                 } catch (Throwable error) {
@@ -101,11 +101,10 @@ public class HomeActivity extends AppCompatActivity {
 
     private void launchFullKodi() {
         try {
-            Toast.makeText(this, "Preparazione di Kodi completo…", Toast.LENGTH_SHORT).show();
-            Intent prepare = new Intent(this, KodiAddonEngineService.class);
-            startService(prepare);
+            Intent launch = new Intent(this, org.xbmc.kodi.Splash.class);
+            startActivity(launch);
         } catch (Exception error) {
-            Toast.makeText(this, "Impossibile preparare Kodi: " +
+            Toast.makeText(this, "Impossibile avviare Kodi: " +
                     (error.getMessage() == null ? error.toString() : error.getMessage()),
                     Toast.LENGTH_LONG).show();
         }

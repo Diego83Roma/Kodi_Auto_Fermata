@@ -32,8 +32,7 @@
         android:name="android.hardware.wifi"
         android:required="false" />
 
-    <queries>\n        <package android:name="org.xbmc.kodi" />
-        <intent>
+    <queries>\n<intent>
             <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
         </intent>
         <intent>
@@ -80,20 +79,7 @@
             android:resource="@style/AppTheme.Dark" />
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="me.aap.fermata.addon.cast.CastOptionsProvider" />
-
-        <activity
-            android:name="org.xbmc.kodi.Main"
-            android:exported="false"
-            android:launchMode="singleInstance"
-            android:configChanges="orientation|keyboard|keyboardHidden|navigation|screenLayout|screenSize|smallestScreenSize|colorMode|uiMode"
-            android:screenOrientation="landscape"
-            android:resizeableActivity="true">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="kodi" />
-        </activity>
-        <activity
+            android:value="me.aap.fermata.addon.cast.CastOptionsProvider" /><activity
             android:name="me.aap.fermata.ui.activity.AddonLibraryActivity"
             android:exported="false"
             android:resizeableActivity="true" />
