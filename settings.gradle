@@ -26,6 +26,8 @@ if ((gradle.ext.localProps['storeFile'] == null ||
 
 rootProject.name = 'Fermata Music Player'
 include ':fermata'
+include ':kodi'
+project(':kodi').projectDir = file('kodi')
 include ':utils'
 project(':utils').projectDir = file('depends/utils')
 
