@@ -1,4 +1,4 @@
-name: Build Kodi Auto Fermata Embedded Engine TEST APK
+name: Build Fermata with complete embedded Kodi TEST APK
 
 concurrency:
   group: kodi-auto-fermata-embedded-${{ github.ref }}
@@ -9,11 +9,16 @@ on:
   push:
     branches:
       - kodi-auto-fermata-embedded-engine
+      - kodi-full-app-test-copy
+      - fermata-modern-ui-pre-kodi-choice
     paths:
       - 'fermata/**'
+      - 'kodi/**'
+      - 'tools/**'
       - 'modules/**'
       - 'depends/**'
       - '*.gradle'
+      - 'proguard-rules.pro'
       - 'gradle/**'
       - 'settings.gradle'
       - '.github/workflows/build-embedded-engine.yml'
@@ -50,8 +55,15 @@ jobs:
           LICENSE_STATUS=$?
           set -o pipefail
           if [ "$LICENSE_STATUS" -ne 0 ] && [ "$LICENSE_STATUS" -ne 141 ]; then exit "$LICENSE_STATUS"; fi
-          "$SDKMANAGER" "platform-tools" "platforms;android-36" "ndk;29.0.14206865"
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "platforms;android-37.0" "build-tools;37.0.0" "ndk;29.0.14206865"
 
+      - name: Checkout exact Kodi Android application sources
+        uses: actions/checkout@v4
+        with:
+          repository: xbmc/xbmc
+          ref: 313acbeaa33dc29bdf379685bf91359e2f534893
+          path: kodi-src
+          fetch-depth: 1
       - name: Download the verified upstream Kodi ARM64 payload
         env:
           GH_TOKEN: ${{ github.token }}
@@ -68,36 +80,41 @@ jobs:
           PAYLOAD="$RUNNER_TEMP/kodi-payload/kodi-core-payload"
           test -s "$PAYLOAD/lib/arm64-v8a/libkodi.so"
           test -s "$PAYLOAD/assets/system/addon-manifest.xml"
-          mkdir -p fermata/src/main/jniLibs/arm64-v8a fermata/src/main/assets/kodi_engine
-          cp -a "$PAYLOAD/lib/arm64-v8a/." fermata/src/main/jniLibs/arm64-v8a/
-          cp -a "$PAYLOAD/assets/." fermata/src/main/assets/kodi_engine/
-          echo "Kodi native libraries: $(find fermata/src/main/jniLibs/arm64-v8a -maxdepth 1 -name '*.so' | wc -l)"
-          echo "Kodi runtime assets: $(find fermata/src/main/assets/kodi_engine -type f | wc -l)"
-          du -sh fermata/src/main/jniLibs/arm64-v8a fermata/src/main/assets/kodi_engine
+          mkdir -p kodi/src/main/jniLibs/arm64-v8a kodi/src/main/assets
+          cp -a "$PAYLOAD/lib/arm64-v8a/." kodi/src/main/jniLibs/arm64-v8a/
+          cp -a "$PAYLOAD/assets/." kodi/src/main/assets/
+          echo "Kodi native libraries: $(find kodi/src/main/jniLibs/arm64-v8a -maxdepth 1 -name '*.so' | wc -l)"
+          echo "Kodi runtime assets: $(find kodi/src/main/assets -type f | wc -l)"
+          du -sh kodi/src/main/jniLibs/arm64-v8a kodi/src/main/assets
 
-      - name: Verify embedded payload and isolated host
+      - name: Import complete upstream Kodi Android application layer
         run: |
           set -euo pipefail
-          test -s fermata/src/main/jniLibs/arm64-v8a/libkodi.so
-          test -s fermata/src/main/assets/kodi_engine/system/addon-manifest.xml
-          test -s fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          test -s fermata/src/main/java/org/xbmc/kodi/Main.java
-          test -s fermata/src/main/java/org/xbmc/kodi/XBMCMainView.java
-          test -s fermata/src/main/java/org/xbmc/kodi/XBMCSettingsContentObserver.java
-          test -s fermata/src/main/java/org/xbmc/kodi/XBMCInputDeviceListener.java
-          ! grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          grep -q 'System.loadLibrary("kodi")' fermata/src/main/java/org/xbmc/kodi/Main.java
-          ! grep -q 'nativeCore.isFile()' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
-          grep -q 'android:value="kodi"' fermata/src/main/AndroidManifest.xml
-          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
-          grep -q 'android:process=":kodi_addon_engine"' fermata/src/main/AndroidManifest.xml
-          grep -q 'Avvia motore add-on interno' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
-          grep -q 'ACTION_PROGRESS' fermata/src/main/java/me/aap/fermata/ui/activity/AddonLibraryActivity.java
-          grep -q 'fermata_payload_complete' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          grep -q 'Verifica libreria Kodi ARM64' fermata/src/main/java/me/aap/fermata/ui/activity/KodiAddonEngineService.java
-          echo "Kodi ARM64 payload + NativeActivity JNI host + surface/settings/input bridges verified."
-
+          python3 tools/import-kodi-android.py kodi-src
+          test -s kodi/src/main/java/org/xbmc/kodi/Main.java
+          test -s kodi/src/main/java/org/xbmc/kodi/Splash.java
+          test -s kodi/src/main/java/org/xbmc/kodi/XBMCFile.java
+          test -s kodi/src/main/java/org/xbmc/kodi/interfaces/XBMCConnectivityManagerNetworkCallback.java
+          test -s kodi/src/main/res/layout/activity_main.xml
+          test -s kodi/src/main/assets/system/addon-manifest.xml
+          test -s kodi/src/main/jniLibs/arm64-v8a/libkodi.so
+      - name: Verify full Kodi application integration
+        run: |
+          set -euo pipefail
+          test -s kodi/src/main/jniLibs/arm64-v8a/libkodi.so
+          test -s kodi/src/main/assets/system/addon-manifest.xml
+          test -s kodi/src/main/java/org/xbmc/kodi/Main.java
+          test -s kodi/src/main/java/org/xbmc/kodi/Splash.java
+          test -s kodi/src/main/java/org/xbmc/kodi/RestartActivity.java
+          test -s kodi/src/main/java/org/xbmc/kodi/content/XBMCFileProvider.java
+          test -s kodi/src/main/java/org/xbmc/kodi/channels/SyncChannelJobService.java
+          grep -q 'android:name=".Main"' kodi/src/main/AndroidManifest.xml
+          grep -q 'android:name=".Splash"' kodi/src/main/AndroidManifest.xml
+          grep -q 'android:value="kodi"' kodi/src/main/AndroidManifest.xml
+          ! grep -q 'android:name="org.xbmc.kodi.Main"' fermata/src/main/AndroidManifest.xml
+          grep -q "implementation project(':kodi')" fermata/build.gradle
+          grep -q "include ':kodi'" settings.gradle
+          echo "Kodi upstream Android app layer, manifest, runtime assets and ARM64 libraries integrated as a separate in-app module."
       - name: Build modern TEST Android App Bundle
         run: |
           set -euo pipefail
@@ -113,8 +130,12 @@ jobs:
           set -euo pipefail
           BUNDLETOOL_VERSION="1.18.3"
           curl --fail --location --retry 3 "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" --output "$RUNNER_TEMP/bundletool.jar"
-          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --bundle="$AAB" --output="$RUNNER_TEMP/kodiauto-modern.apks" --mode=universal --ks=res/fermata.jks --ks-key-alias=fermata --ks-pass=pass:fermata --key-pass=pass:fermata
-          unzip -p "$RUNNER_TEMP/kodiauto-modern.apks" universal.apk > "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --bundle="$AAB" --output="$RUNNER_TEMP/kodiauto-modern.apks" --mode=universal
+          unzip -p "$RUNNER_TEMP/kodiauto-modern.apks" universal.apk > "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST-unsigned.apk"
+          ZIPALIGN="$(find "$ANDROID_HOME/build-tools" -type f -name zipalign | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$ZIPALIGN" -f -p 4 "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST-unsigned.apk" "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST-aligned.apk"
+          "$APKSIGNER" sign --ks=res/fermata.jks --ks-key-alias=fermata --ks-pass=pass:fermata --key-pass=pass:fermata --min-sdk-version 24 --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --out "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk" "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST-aligned.apk"
           test -s "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
           ls -lh "$RUNNER_TEMP/Kodi-Auto-Fermata-Embedded-Engine-TEST.apk"
 
@@ -127,8 +148,10 @@ jobs:
           BADGING="$("$AAPT" dump badging "$APK")"
           echo "$BADGING" | grep -F "package: name='me.aap.fermata.auto.kodiautomodern'"
           echo "$BADGING" | grep -F "application-label:'Kodi Auto Fermata TEST'"
-          unzip -l "$APK" | grep -E 'lib/arm64-v8a/libkodi.so|assets/kodi_engine/system/addon-manifest.xml'
-          "$APKSIGNER" verify --verbose "$APK"
+          unzip -l "$APK" | grep -E 'lib/arm64-v8a/libkodi.so|assets/system/addon-manifest.xml'
+          SIGNATURE_REPORT="$( "$APKSIGNER" verify --verbose "$APK" )"
+          echo "$SIGNATURE_REPORT"
+          echo "$SIGNATURE_REPORT" | grep -F "Verified using v3 scheme (APK Signature Scheme v3): true"
 
       - name: Upload installable TEST APK
         if: success()
