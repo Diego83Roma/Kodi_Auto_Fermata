@@ -17,6 +17,8 @@ replacements = {
     "@APP_PACKAGE@": "org.xbmc.kodi",
     "@APP_NAME@": "Kodi",
     "@APP_NAME_LC@": "kodi",
+    "@APP_VERSION_CODE_ANDROID@": "1",
+    "@APP_VERSION@": "1.0",
 }
 java_root = destination / "java"
 if java_root.exists():
@@ -94,7 +96,12 @@ for template, output in (
 ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
 ET.register_namespace("tools", "http://schemas.android.com/tools")
 android = "{http://schemas.android.com/apk/res/android}"
-tree = ET.parse(source / "AndroidManifest.xml.in")
+manifest_text = (source / "AndroidManifest.xml.in").read_text(encoding="utf-8")
+for old, new in replacements.items():
+    manifest_text = manifest_text.replace(old, new)
+if "@APP_" in manifest_text:
+    raise SystemExit("Unresolved Kodi manifest template token")
+tree = ET.ElementTree(ET.fromstring(manifest_text))
 root = tree.getroot()
 for attribute in ("installLocation", "versionCode", "versionName"):
     root.attrib.pop(android + attribute, None)
