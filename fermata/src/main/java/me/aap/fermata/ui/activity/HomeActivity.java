@@ -127,6 +127,8 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayout.LayoutParams heroLp = lp(-1, -2); heroLp.bottomMargin = dp(18);
         root.addView(hero, heroLp);
 
+        addKodiLauncherTile();
+
         addSection("CONTENUTI");
         addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
         addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
@@ -155,6 +157,47 @@ public class HomeActivity extends AppCompatActivity {
 
     private void openBuiltInAddon(int fragmentId) {
         openFermataScreen(fragmentId);
+    }
+
+
+    private void addKodiLauncherTile() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackground(shape(Color.rgb(31, 54, 78), 20));
+        int logoId = getResources().getIdentifier("kodiauto_original_logo", "drawable", getPackageName());
+        ImageView icon = new ImageView(this);
+        if (logoId != 0) icon.setImageResource(logoId);
+        else icon.setImageResource(android.R.drawable.ic_media_play);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        card.addView(icon, new LinearLayout.LayoutParams(dp(68), dp(68)));
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams infoLp = lp(0, -2);
+        infoLp.weight = 1;
+        infoLp.leftMargin = dp(14);
+        info.addView(text("KODI", 21, Color.WHITE, true));
+        TextView detail = text("Apri il media center completo integrato in Fermata", 13, Color.rgb(190, 207, 226), false);
+        LinearLayout.LayoutParams detailLp = lp(-1, -2);
+        detailLp.topMargin = dp(4);
+        info.addView(detail, detailLp);
+        TextView action = text("AVVIA KODI  ›", 12, Color.rgb(111, 195, 255), true);
+        LinearLayout.LayoutParams actionLp = lp(-1, -2);
+        actionLp.topMargin = dp(8);
+        info.addView(action, actionLp);
+        card.addView(info, infoLp);
+        card.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(HomeActivity.this, org.xbmc.kodi.Splash.class));
+            } catch (Throwable error) {
+                Toast.makeText(HomeActivity.this, "Avvio di Kodi non riuscito: " +
+                        (error.getMessage() == null ? error.toString() : error.getMessage()), Toast.LENGTH_LONG).show();
+            }
+        });
+        LinearLayout.LayoutParams cp = lp(-1, -2);
+        cp.bottomMargin = dp(20);
+        root.addView(card, cp);
     }
 
     private void openFermataScreen(int fragmentId) {
