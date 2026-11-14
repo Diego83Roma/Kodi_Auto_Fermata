@@ -15,6 +15,7 @@ on:
       - 'modules/**'
       - 'depends/**'
       - '*.gradle'
+      - 'proguard-rules.pro'
       - 'gradle/**'
       - 'settings.gradle'
       - '.github/workflows/build-embedded-engine.yml'
