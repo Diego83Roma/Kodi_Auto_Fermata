@@ -118,6 +118,9 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayout.LayoutParams heroLp = lp(-1, -2); heroLp.bottomMargin = dp(18);
         root.addView(hero, heroLp);
 
+        addSection("PLAYER");
+        addTile("Kodi Player", "Apri Kodi installato sul telefono", "Avvia l'applicazione Kodi", this::openKodiPlayer);
+
         addSection("CONTENUTI");
         addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
         addTile("Libreria", "Cartelle e contenuti multimediali", "Sfoglia i contenuti con Fermata", () -> openFermataScreen(R.id.folders_fragment));
@@ -143,6 +146,20 @@ public class HomeActivity extends AppCompatActivity {
 
     private void openBuiltInAddon(int fragmentId) {
         openFermataScreen(fragmentId);
+    }
+
+    private void openKodiPlayer() {
+        Intent launch = getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
+        if (launch == null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Kodi non trovato")
+                    .setMessage("L'app Kodi non risulta installata. Installa Kodi sul telefono e riprova.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(launch);
     }
 
     private void openFermataScreen(int fragmentId) {
