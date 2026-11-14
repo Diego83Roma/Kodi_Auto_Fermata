@@ -17,3 +17,6 @@
 
 # Kodi JNI creates this callback class dynamically through ClassLoader.loadClass/NewObject.
 -keep class org.xbmc.kodi.interfaces.** { *; }
+
+# Kodi loads this Java bridge by its fully-qualified name from native JNI.
+-keep class org.xbmc.kodi.XBMCMediaSession { *; }
