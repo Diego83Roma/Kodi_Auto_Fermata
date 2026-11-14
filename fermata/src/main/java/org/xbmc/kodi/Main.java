@@ -218,8 +218,44 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   });
  }
 
+ private String probeNativeJniClasses() {
+  StringBuilder out = new StringBuilder();
+  String pkg = getPackageName();
+  ClassLoader loader = getClassLoader();
+  out.append("package=").append(pkg)
+   .append("; activityClass=").append(getClass().getName())
+   .append("; loader=").append(loader == null ? "null" : loader.getClass().getName());
+  try {
+   Class<?> listener = Class.forName(pkg + ".XBMCInputDeviceListener", true, loader);
+   java.lang.reflect.Constructor<?> ctor = listener.getDeclaredConstructor();
+   Object instance = ctor.newInstance();
+   out.append("; inputListener=OK(").append(listener.getName())
+    .append(", ctor=").append(ctor.getModifiers()).append(")");
+  } catch (Throwable t) {
+   out.append("; inputListener=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
+   Class<?> observer = Class.forName(pkg + ".XBMCSettingsContentObserver", false, loader);
+   observer.getDeclaredConstructor(android.content.Context.class, Handler.class);
+   out.append("; settingsObserver=OK(").append(observer.getName()).append(")");
+  } catch (Throwable t) {
+   out.append("; settingsObserver=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
+   Class<?> main = Class.forName("org.xbmc.kodi.Main", false, loader);
+   out.append("; kodiMain=OK(").append(main.getName()).append(")");
+  } catch (Throwable t) {
+   out.append("; kodiMain=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  return out.toString();
+ }
+
  @Override public void onStart() {
-  diag("08A onStart: ingresso prima di NativeActivity.super.onStart", null);
+  String jniProbe = probeNativeJniClasses();
+  diag("08A onStart: ingresso prima di NativeActivity.super.onStart | " + jniProbe, null);
   super.onStart();
   diag("08B onStart: NativeActivity.super.onStart completato", null);
   Choreographer.getInstance().removeFrameCallback(this);
