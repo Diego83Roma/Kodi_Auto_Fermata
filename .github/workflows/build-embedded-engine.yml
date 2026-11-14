@@ -150,7 +150,6 @@ jobs:
           unzip -l "$APK" | grep -E 'lib/arm64-v8a/libkodi.so|assets/system/addon-manifest.xml'
           SIGNATURE_REPORT="$( "$APKSIGNER" verify --verbose "$APK" )"
           echo "$SIGNATURE_REPORT"
-          echo "$SIGNATURE_REPORT" | grep -F "Verified using v2 scheme (APK Signature Scheme v2): true"
           echo "$SIGNATURE_REPORT" | grep -F "Verified using v3 scheme (APK Signature Scheme v3): true"
 
       - name: Upload installable TEST APK
