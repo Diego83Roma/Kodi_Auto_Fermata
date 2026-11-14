@@ -25,7 +25,7 @@ java_root.mkdir(parents=True)
 java_count = 0
 for template in sorted((source / "src").rglob("*.java.in")):
     relative = template.relative_to(source / "src")
-    output = java_root / relative.with_suffix("")
+    output = java_root / "org" / "xbmc" / "kodi" / relative.with_suffix("")
     output.parent.mkdir(parents=True, exist_ok=True)
     content = template.read_text(encoding="utf-8")
     for old, new in replacements.items():
