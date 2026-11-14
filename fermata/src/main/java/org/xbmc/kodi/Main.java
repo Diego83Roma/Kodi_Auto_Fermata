@@ -169,8 +169,26 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   }
  }
 
- @Override protected void onPause() { diag("LIFECYCLE onPause: ingresso", null); super.onPause(); diag("LIFECYCLE onPause: completato", null); }
- @Override protected void onStop() { diag("LIFECYCLE onStop: ingresso", null); super.onStop(); diag("LIFECYCLE onStop: completato", null); }
+ private String lifecycleState(String callback) {
+  return callback + " | isFinishing=" + isFinishing()
+   + " | isChangingConfigurations=" + isChangingConfigurations()
+   + " | isTaskRoot=" + isTaskRoot()
+   + " | taskId=" + getTaskId()
+   + " | intentFlags=0x" + Integer.toHexString(getIntent() != null ? getIntent().getFlags() : 0)
+   + " | processId=" + android.os.Process.myPid();
+ }
+
+ @Override protected void onPause() {
+  diag(lifecycleState("LIFECYCLE onPause: prima di super"), null);
+  super.onPause();
+  diag(lifecycleState("LIFECYCLE onPause: dopo super"), null);
+ }
+
+ @Override protected void onStop() {
+  diag(lifecycleState("LIFECYCLE onStop: prima di super"), null);
+  super.onStop();
+  diag(lifecycleState("LIFECYCLE onStop: dopo super"), null);
+ }
 
  private void applyImmersive() {
   if (Build.VERSION.SDK_INT >= 30) {
@@ -256,7 +274,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  }
 
  @Override protected void onDestroy() {
-  diag("onDestroy: schermata Kodi distrutta", null);
+  diag(lifecycleState("LIFECYCLE onDestroy: ingresso prima di super"), null);
   shuttingDown = true;
   Choreographer.getInstance().removeFrameCallback(this);
   if (inputListener != null) {
@@ -266,5 +284,6 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   if (settingsObserver != null) getContentResolver().unregisterContentObserver(settingsObserver);
   if (MainActivity == this) MainActivity = null;
   super.onDestroy();
+  diag(lifecycleState("LIFECYCLE onDestroy: super completato"), null);
  }
 }
