@@ -23,8 +23,8 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private boolean shuttingDown;
  private boolean firstFrame = true;
  private Handler handler;
- private me.aap.fermata.auto.kodiautomodern.XBMCSettingsContentObserver settingsObserver;
- private me.aap.fermata.auto.kodiautomodern.XBMCInputDeviceListener inputListener;
+ private XBMCSettingsContentObserver settingsObserver;
+ private XBMCInputDeviceListener inputListener;
  private static final String DIAG_PREFS = "kodi_engine_state";
  private String previousExitDetail = "";
 
@@ -156,9 +156,9 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    setContentView(root);
    setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
    handler = new Handler(getMainLooper());
-   settingsObserver = new me.aap.fermata.auto.kodiautomodern.XBMCSettingsContentObserver(getApplicationContext(), handler);
+   settingsObserver = new XBMCSettingsContentObserver(getApplicationContext(), handler);
    getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, settingsObserver);
-   inputListener = new me.aap.fermata.auto.kodiautomodern.XBMCInputDeviceListener();
+   inputListener = new XBMCInputDeviceListener();
    InputManager manager = (InputManager) getSystemService(INPUT_SERVICE);
    manager.registerInputDeviceListener(inputListener, handler);
    applyImmersive();
@@ -226,7 +226,7 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    .append("; activityClass=").append(getClass().getName())
    .append("; loader=").append(loader == null ? "null" : loader.getClass().getName());
   try {
-   Class<?> listener = Class.forName(pkg + ".XBMCInputDeviceListener", true, loader);
+   Class<?> listener = Class.forName("org.xbmc.kodi.XBMCInputDeviceListener", true, loader);
    java.lang.reflect.Constructor<?> ctor = listener.getDeclaredConstructor();
    Object instance = ctor.newInstance();
    out.append("; inputListener=OK(").append(listener.getName())
@@ -236,11 +236,20 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
     .append(": ").append(t.getMessage()).append(")");
   }
   try {
-   Class<?> observer = Class.forName(pkg + ".XBMCSettingsContentObserver", false, loader);
+   Class<?> observer = Class.forName("org.xbmc.kodi.XBMCSettingsContentObserver", false, loader);
    observer.getDeclaredConstructor(android.content.Context.class, Handler.class);
    out.append("; settingsObserver=OK(").append(observer.getName()).append(")");
   } catch (Throwable t) {
    out.append("; settingsObserver=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
+   Class<?> audio = Class.forName("org.xbmc.kodi.interfaces.XBMCAudioManagerOnAudioFocusChangeListener", true, loader);
+   audio.getDeclaredConstructor();
+   audio.getDeclaredMethod("onAudioFocusChange", int.class);
+   out.append("; audioFocusListener=OK(").append(audio.getName()).append(")");
+  } catch (Throwable t) {
+   out.append("; audioFocusListener=FAIL(").append(t.getClass().getName())
     .append(": ").append(t.getMessage()).append(")");
   }
   try {
