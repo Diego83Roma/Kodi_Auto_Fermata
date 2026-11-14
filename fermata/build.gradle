@@ -97,6 +97,7 @@ android {
 
 dependencies {
     implementation project(':utils')
+    implementation project(':kodi')
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
     implementation libs.androidMaterial
