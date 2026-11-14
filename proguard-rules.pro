@@ -18,5 +18,8 @@
 # Kodi JNI creates this callback class dynamically through ClassLoader.loadClass/NewObject.
 -keep class org.xbmc.kodi.interfaces.** { *; }
 
+# Kodi calls these methods by JNI name; R8 must not rename or remove them.
+-keep class org.xbmc.kodi.Main { *; }
+
 # Kodi loads this Java bridge by its fully-qualified name from native JNI.
 -keep class org.xbmc.kodi.XBMCMediaSession { *; }
