@@ -27,8 +27,10 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private XBMCInputDeviceListener inputListener;
  private static final String DIAG_PREFS = "kodi_engine_state";
  private String previousExitDetail = "";
+ private String lastJniProbe = "";
 
  private void diag(String stage, Throwable error) {
+  if (!lastJniProbe.isEmpty()) stage += " | JNI probe: " + lastJniProbe;
   String detail = "";
   if (error == null) detail = previousExitDetail;
   if (error != null) {
@@ -110,10 +112,17 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
     .append("\\nImportanza processo: ").append(info.getImportance());
    try (java.io.InputStream trace = info.getTraceInputStream()) {
     if (trace != null) {
-     byte[] buffer = new byte[24576];
-     int count = trace.read(buffer);
-     if (count > 0) report.append("\\nTraccia diagnostica Android:\\n")
-      .append(new String(buffer, 0, count, java.nio.charset.StandardCharsets.UTF_8));
+     java.io.ByteArrayOutputStream traceBytes = new java.io.ByteArrayOutputStream();
+     byte[] buffer = new byte[8192];
+     int count;
+     int total = 0;
+     while ((count = trace.read(buffer)) != -1 && total < 131072) {
+      int keep = Math.min(count, 131072 - total);
+      traceBytes.write(buffer, 0, keep);
+      total += keep;
+     }
+     if (total > 0) report.append("\\nTraccia diagnostica Android (").append(total).append(" byte):\\n")
+      .append(new String(traceBytes.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
     }
    } catch (Throwable traceError) {
     report.append("\\nTraccia non disponibile: ").append(traceError.getClass().getSimpleName());
@@ -298,8 +307,8 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  }
 
  @Override public void onStart() {
-  String jniProbe = probeNativeJniClasses();
-  diag("08A onStart: ingresso prima di NativeActivity.super.onStart | " + jniProbe, null);
+  lastJniProbe = probeNativeJniClasses();
+  diag("08A onStart: ingresso prima di NativeActivity.super.onStart", null);
   super.onStart();
   diag("08B onStart: NativeActivity.super.onStart completato", null);
   Choreographer.getInstance().removeFrameCallback(this);
