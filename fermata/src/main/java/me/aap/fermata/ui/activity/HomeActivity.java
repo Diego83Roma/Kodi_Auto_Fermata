@@ -127,11 +127,6 @@ public class HomeActivity extends AppCompatActivity {
         addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
         addTile("Playlist", "Le tue raccolte personalizzate", "Apri le playlist di Fermata", () -> openFermataScreen(R.id.playlists_fragment));
 
-        addSection("ADD-ON E REPOSITORY");
-        addTile("Installa da ZIP", "Aggiungi un pacchetto compatibile", "Seleziona un file ZIP dalla memoria", this::pickZip);
-        addTile("I miei Add-on", "Pacchetti installati", "Visualizza gli add-on importati", this::showInstalled);
-        addTile("Repository", "Sorgenti di pacchetti", "Aggiungi o rimuovi indirizzi repository", this::manageRepositories);
-
         addSection("WEB E VIDEO");
         addTile("Web Browser", "Navigazione web integrata", "Apri il browser di Fermata", () -> openBuiltInAddon(R.id.web_browser_fragment));
         addTile("YouTube", "Video e canali YouTube", "Apri YouTube integrato in Fermata", () -> openBuiltInAddon(R.id.youtube_fragment));
