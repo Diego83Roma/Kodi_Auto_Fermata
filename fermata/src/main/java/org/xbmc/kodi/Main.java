@@ -245,11 +245,26 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
   }
   try {
    Class<?> audio = Class.forName("org.xbmc.kodi.interfaces.XBMCAudioManagerOnAudioFocusChangeListener", true, loader);
-   audio.getDeclaredConstructor();
+   java.lang.reflect.Constructor<?> audioCtor = audio.getDeclaredConstructor();
    audio.getDeclaredMethod("onAudioFocusChange", int.class);
-   out.append("; audioFocusListener=OK(").append(audio.getName()).append(")");
+   out.append("; audioFocusListener=OK(").append(audio.getName())
+    .append(", abstract=").append(java.lang.reflect.Modifier.isAbstract(audio.getModifiers()))
+    .append(", ctor=").append(java.lang.reflect.Modifier.toString(audioCtor.getModifiers())).append(")");
   } catch (Throwable t) {
    out.append("; audioFocusListener=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
+   Class<?> display = Class.forName("org.xbmc.kodi.interfaces.XBMCDisplayManagerDisplayListener", true, loader);
+   java.lang.reflect.Constructor<?> ctor = display.getDeclaredConstructor();
+   display.getDeclaredMethod("onDisplayAdded", int.class);
+   display.getDeclaredMethod("onDisplayChanged", int.class);
+   display.getDeclaredMethod("onDisplayRemoved", int.class);
+   out.append("; displayListener=OK(").append(display.getName())
+    .append(", abstract=").append(java.lang.reflect.Modifier.isAbstract(display.getModifiers()))
+    .append(", ctor=").append(java.lang.reflect.Modifier.toString(ctor.getModifiers())).append(")");
+  } catch (Throwable t) {
+   out.append("; displayListener=FAIL(").append(t.getClass().getName())
     .append(": ").append(t.getMessage()).append(")");
   }
   try {
