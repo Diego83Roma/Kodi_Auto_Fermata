@@ -14,3 +14,6 @@
 
 -keepnames class androidx.media3.exoplayer.ExoPlayerImpl { *; }
 -keepnames class androidx.media3.exoplayer.ExoPlayerImplInternal { *; }
+
+# Kodi JNI creates this callback class dynamically through ClassLoader.loadClass/NewObject.
+-keep class org.xbmc.kodi.interfaces.XBMCAudioManagerOnAudioFocusChangeListener { *; }
