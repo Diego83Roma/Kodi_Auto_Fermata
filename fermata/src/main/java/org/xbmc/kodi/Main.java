@@ -23,8 +23,8 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
  private boolean shuttingDown;
  private boolean firstFrame = true;
  private Handler handler;
- private XBMCSettingsContentObserver settingsObserver;
- private XBMCInputDeviceListener inputListener;
+ private me.aap.fermata.auto.kodiautomodern.XBMCSettingsContentObserver settingsObserver;
+ private me.aap.fermata.auto.kodiautomodern.XBMCInputDeviceListener inputListener;
  private static final String DIAG_PREFS = "kodi_engine_state";
  private String previousExitDetail = "";
 
@@ -156,9 +156,9 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
    setContentView(root);
    setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
    handler = new Handler(getMainLooper());
-   settingsObserver = new XBMCSettingsContentObserver(getApplicationContext(), handler);
+   settingsObserver = new me.aap.fermata.auto.kodiautomodern.XBMCSettingsContentObserver(getApplicationContext(), handler);
    getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, settingsObserver);
-   inputListener = new XBMCInputDeviceListener();
+   inputListener = new me.aap.fermata.auto.kodiautomodern.XBMCInputDeviceListener();
    InputManager manager = (InputManager) getSystemService(INPUT_SERVICE);
    manager.registerInputDeviceListener(inputListener, handler);
    applyImmersive();
