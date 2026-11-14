@@ -256,6 +256,26 @@ public final class Main extends NativeActivity implements Choreographer.FrameCal
     .append(": ").append(t.getMessage()).append(")");
   }
   try {
+   Class<?> receiver = Class.forName("org.xbmc.kodi.XBMCBroadcastReceiver", true, loader);
+   java.lang.reflect.Method callback = receiver.getDeclaredMethod("_onReceive", Intent.class);
+   out.append("; broadcastReceiver=OK(").append(receiver.getName())
+    .append(", native=").append(java.lang.reflect.Modifier.isNative(callback.getModifiers())).append(")");
+  } catch (Throwable t) {
+   out.append("; broadcastReceiver=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
+   Class<?> network = Class.forName("org.xbmc.kodi.interfaces.XBMCConnectivityManagerNetworkCallback", true, loader);
+   java.lang.reflect.Method available = network.getDeclaredMethod("_onAvailable", android.net.Network.class);
+   java.lang.reflect.Method lost = network.getDeclaredMethod("_onLost", android.net.Network.class);
+   out.append("; connectivityCallback=OK(").append(network.getName())
+    .append(", native=").append(java.lang.reflect.Modifier.isNative(available.getModifiers())
+     && java.lang.reflect.Modifier.isNative(lost.getModifiers())).append(")");
+  } catch (Throwable t) {
+   out.append("; connectivityCallback=FAIL(").append(t.getClass().getName())
+    .append(": ").append(t.getMessage()).append(")");
+  }
+  try {
    Class<?> audio = Class.forName("org.xbmc.kodi.interfaces.XBMCAudioManagerOnAudioFocusChangeListener", true, loader);
    java.lang.reflect.Constructor<?> audioCtor = audio.getDeclaredConstructor();
    audio.getDeclaredMethod("onAudioFocusChange", int.class);
