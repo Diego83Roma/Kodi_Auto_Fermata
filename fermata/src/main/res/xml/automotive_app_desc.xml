@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<automotiveApp>
+<automotiveApp xmlns:tools="http://schemas.android.com/tools">
     <uses name="media" />
+    <!-- Keep TEMPLATE disabled: FS Mirror is intentionally disabled in Fermata 2.0.2. -->
+    <uses
+        name="service"
+        tools:ignore="InvalidUsesTagAttribute" />
+    <uses
+        name="projection"
+        tools:ignore="InvalidUsesTagAttribute" />
 </automotiveApp>
