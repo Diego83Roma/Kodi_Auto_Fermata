@@ -21,6 +21,9 @@ import static me.aap.utils.ui.UiUtils.showAlert;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.app.AppOpsManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -654,6 +657,11 @@ public class SettingsFragment extends MainActivityFragment
 			});
 			if (!a.isCarActivityNotMirror()) {
 				sub1.addButton(o -> {
+					o.title = R.string.android_auto_diagnostics;
+					o.subtitle = R.string.open_log;
+					o.onClick = () -> shareAndroidAutoDiagnostics(a);
+				});
+				sub1.addButton(o -> {
 					o.title = R.string.open_log;
 					o.onClick = () -> openLog(a);
 				});
@@ -940,6 +948,118 @@ public class SettingsFragment extends MainActivityFragment
 			if (ctx instanceof Activity) ((Activity) ctx).finishAffinity();
 			else System.exit(0);
 		});
+	}
+
+	private void shareAndroidAutoDiagnostics(MainActivityDelegate a) {
+		Context ctx = a.getContext();
+		String pkg = ctx.getPackageName();
+		PackageManager pm = ctx.getPackageManager();
+		StringBuilder report = new StringBuilder(2048);
+		report.append("Fermata Android Auto diagnostics\\n")
+				.append("Package: ").append(pkg).append('\\n')
+				.append("Android: ").append(Build.VERSION.RELEASE)
+				.append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\\n")
+				.append("Device: ").append(Build.MANUFACTURER).append(' ')
+				.append(Build.MODEL).append('\\n')
+				.append("Build flavor AUTO: ").append(BuildConfig.AUTO).append('\\n');
+
+		try {
+			PackageInfo pi = pm.getPackageInfo(pkg, 0);
+			report.append("App version: ").append(pi.versionName).append(" (")
+					.append(pi.versionCode).append(")\\n");
+		} catch (Exception e) {
+			report.append("App version: unavailable: ").append(e).append('\\n');
+		}
+
+		try {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+				var source = pm.getInstallSourceInfo(pkg);
+				report.append("Installer: ").append(source.getInstallingPackageName()).append('\\n')
+						.append("Initiating installer: ").append(source.getInitiatingPackageName()).append('\\n')
+						.append("Originating package: ").append(source.getOriginatingPackageName()).append('\\n');
+			} else {
+				report.append("Installer: ").append(pm.getInstallerPackageName(pkg)).append('\\n');
+			}
+		} catch (Exception e) {
+			report.append("Install source: unavailable: ").append(e).append('\\n');
+		}
+
+		report.append("\\n-- Android Auto package --\\n");
+		try {
+			PackageInfo aa = pm.getPackageInfo("com.google.android.projection.gearhead", 0);
+			report.append("Android Auto version: ").append(aa.versionName).append(" (")
+					.append(aa.versionCode).append(")\\n");
+		} catch (Exception e) {
+			report.append("Android Auto package: not visible/not installed: ").append(e.getClass().getSimpleName()).append('\\n');
+		}
+
+		report.append("\\n-- Declared services visible to PackageManager --\\n");
+		appendQueriedServices(report, pm, pkg, "MediaBrowserService",
+				new Intent("android.media.browse.MediaBrowserService"));
+		appendQueriedServices(report, pm, pkg, "Projection",
+				new Intent(Intent.ACTION_MAIN).addCategory("com.google.android.gms.car.category.CATEGORY_PROJECTION"));
+		appendQueriedServices(report, pm, pkg, "Projection OEM",
+				new Intent(Intent.ACTION_MAIN).addCategory("com.google.android.gms.car.category.CATEGORY_PROJECTION_OEM"));
+		appendQueriedServices(report, pm, pkg, "Car App service",
+				new Intent("androidx.car.app.CarAppService"));
+
+		report.append("\\n-- Permissions --\\n");
+		String[] permissions = {
+				"android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+				"android.permission.SYSTEM_ALERT_WINDOW",
+				"android.permission.DISABLE_KEYGUARD",
+				"androidx.car.app.ACCESS_SURFACE",
+				"androidx.car.app.NAVIGATION_TEMPLATES"
+		};
+		for (String permission : permissions) {
+			report.append(permission).append(": ")
+					.append(pm.checkPermission(permission, pkg) == PackageManager.PERMISSION_GRANTED
+							? "granted" : "not granted / not runtime-grantable").append('\\n');
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			report.append("Can draw overlays: ").append(Settings.canDrawOverlays(ctx)).append('\\n');
+		}
+
+		report.append("Accessibility services enabled: ")
+				.append(android.provider.Settings.Secure.getString(ctx.getContentResolver(),
+						android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)).append('\\n');
+
+		try {
+			AppOpsManager appOps = (AppOpsManager) ctx.getSystemService(Context.APP_OPS_SERVICE);
+			int mode = appOps.checkOpNoThrow("android:project_media", android.os.Process.myUid(), pkg);
+			report.append("AppOp android:project_media: ").append(appOpsMode(mode)).append(" (").append(mode).append(")\\n");
+		} catch (Exception e) {
+			report.append("AppOp android:project_media: unavailable: ").append(e).append('\\n');
+		}
+
+		Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain")
+				.putExtra(Intent.EXTRA_SUBJECT, "Fermata Android Auto diagnostics")
+				.putExtra(Intent.EXTRA_TEXT, report.toString());
+		a.startActivity(Intent.createChooser(share, "Share diagnostics"));
+	}
+
+	private static String appOpsMode(int mode) {
+		if (mode == AppOpsManager.MODE_ALLOWED) return "allowed";
+		if (mode == AppOpsManager.MODE_IGNORED) return "ignored";
+		if (mode == AppOpsManager.MODE_ERRORED) return "errored";
+		if (mode == AppOpsManager.MODE_DEFAULT) return "default";
+		return "unknown";
+	}
+
+	private static void appendQueriedServices(StringBuilder out, PackageManager pm, String pkg,
+											  String label, Intent intent) {
+		intent.setPackage(pkg);
+		try {
+			var services = pm.queryIntentServices(intent, PackageManager.MATCH_DISABLED_COMPONENTS);
+			out.append(label).append(": ").append(services.size()).append('\\n');
+			for (var info : services) {
+				out.append("  ").append(info.serviceInfo.name)
+						.append(" enabled=").append(info.serviceInfo.enabled)
+						.append(" exported=").append(info.serviceInfo.exported).append('\\n');
+			}
+		} catch (Exception e) {
+			out.append(label).append(": query failed: ").append(e).append('\\n');
+		}
 	}
 
 	private void openLog(MainActivityDelegate a) {
