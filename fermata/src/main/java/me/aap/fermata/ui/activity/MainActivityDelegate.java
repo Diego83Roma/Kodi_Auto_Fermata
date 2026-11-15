@@ -233,7 +233,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 		} else {
 			navId = ID_NULL;
-			fragmentId = ID_NULL;
+			fragmentId = (intent != null) ?
+					intent.getIntExtra("kodiauto.open_fragment", ID_NULL) : ID_NULL;
 		}
 
 		AppActivity a = getAppActivity();
@@ -997,6 +998,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		floatingButton = a.findViewById(R.id.floating_button);
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		controlPanel.bind(getMediaServiceBinder());
+
+		// Modern home uses Fermata playback and fragments without the legacy navigation bars.
+		if (a.getIntent().getBooleanExtra("kodiauto.modern_host", false)) {
+			toolBar.setVisibility(android.view.View.GONE);
+			navBar.setVisibility(android.view.View.GONE);
+		}
 
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
 			ViewCompat.setOnApplyWindowInsetsListener(toolBar, (v, insets) -> {
