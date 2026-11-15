@@ -36,7 +36,7 @@ jobs:
       - name: Export vars
         env:
           APP_NAME: Fermata Kodi Auto
-          APP_ID_SFX: ${{ vars.APP_ID_SFX }}
+          APP_ID_SFX: none
           ARTIFACT_SFX: ${{ vars.ARTIFACT_SFX }}
         run: |
           export_vars() {
