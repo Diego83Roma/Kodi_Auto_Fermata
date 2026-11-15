@@ -659,7 +659,6 @@ public class SettingsFragment extends MainActivityFragment
 			if (!a.isCarActivityNotMirror()) {
 				sub1.addButton(o -> {
 					o.title = R.string.android_auto_diagnostics;
-					o.subtitle = R.string.open_log;
 					o.onClick = () -> shareAndroidAutoDiagnostics(a);
 				});
 				sub1.addButton(o -> {
@@ -956,45 +955,45 @@ public class SettingsFragment extends MainActivityFragment
 		String pkg = ctx.getPackageName();
 		PackageManager pm = ctx.getPackageManager();
 		StringBuilder report = new StringBuilder(2048);
-		report.append("Fermata Android Auto diagnostics\\n")
-				.append("Package: ").append(pkg).append('\\n')
+		report.append("Fermata Android Auto diagnostics\n")
+				.append("Package: ").append(pkg).append('\n')
 				.append("Android: ").append(Build.VERSION.RELEASE)
-				.append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\\n")
+				.append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\n")
 				.append("Device: ").append(Build.MANUFACTURER).append(' ')
-				.append(Build.MODEL).append('\\n')
-				.append("Build flavor AUTO: ").append(BuildConfig.AUTO).append('\\n');
+				.append(Build.MODEL).append('\n')
+				.append("Build flavor AUTO: ").append(BuildConfig.AUTO).append('\n');
 
 		try {
 			PackageInfo pi = pm.getPackageInfo(pkg, 0);
 			report.append("App version: ").append(pi.versionName).append(" (")
-					.append(pi.versionCode).append(")\\n");
+					.append(pi.versionCode).append(")\n");
 		} catch (Exception e) {
-			report.append("App version: unavailable: ").append(e).append('\\n');
+			report.append("App version: unavailable: ").append(e).append('\n');
 		}
 
 		try {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 				var source = pm.getInstallSourceInfo(pkg);
-				report.append("Installer: ").append(source.getInstallingPackageName()).append('\\n')
-						.append("Initiating installer: ").append(source.getInitiatingPackageName()).append('\\n')
-						.append("Originating package: ").append(source.getOriginatingPackageName()).append('\\n');
+				report.append("Installer: ").append(source.getInstallingPackageName()).append('\n')
+						.append("Initiating installer: ").append(source.getInitiatingPackageName()).append('\n')
+						.append("Originating package: ").append(source.getOriginatingPackageName()).append('\n');
 			} else {
-				report.append("Installer: ").append(pm.getInstallerPackageName(pkg)).append('\\n');
+				report.append("Installer: ").append(pm.getInstallerPackageName(pkg)).append('\n');
 			}
 		} catch (Exception e) {
-			report.append("Install source: unavailable: ").append(e).append('\\n');
+			report.append("Install source: unavailable: ").append(e).append('\n');
 		}
 
-		report.append("\\n-- Android Auto package --\\n");
+		report.append("\n-- Android Auto package --\n");
 		try {
 			PackageInfo aa = pm.getPackageInfo("com.google.android.projection.gearhead", 0);
 			report.append("Android Auto version: ").append(aa.versionName).append(" (")
-					.append(aa.versionCode).append(")\\n");
+					.append(aa.versionCode).append(")\n");
 		} catch (Exception e) {
-			report.append("Android Auto package: not visible/not installed: ").append(e.getClass().getSimpleName()).append('\\n');
+			report.append("Android Auto package: not visible/not installed: ").append(e.getClass().getSimpleName()).append('\n');
 		}
 
-		report.append("\\n-- Declared services visible to PackageManager --\\n");
+		report.append("\n-- Declared services visible to PackageManager --\n");
 		appendQueriedServices(report, pm, pkg, "MediaBrowserService",
 				new Intent("android.media.browse.MediaBrowserService"));
 		appendQueriedServices(report, pm, pkg, "Projection",
@@ -1004,7 +1003,7 @@ public class SettingsFragment extends MainActivityFragment
 		appendQueriedServices(report, pm, pkg, "Car App service",
 				new Intent("androidx.car.app.CarAppService"));
 
-		report.append("\\n-- Permissions --\\n");
+		report.append("\n-- Permissions --\n");
 		String[] permissions = {
 				"android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
 				"android.permission.SYSTEM_ALERT_WINDOW",
@@ -1015,22 +1014,22 @@ public class SettingsFragment extends MainActivityFragment
 		for (String permission : permissions) {
 			report.append(permission).append(": ")
 					.append(pm.checkPermission(permission, pkg) == PackageManager.PERMISSION_GRANTED
-							? "granted" : "not granted / not runtime-grantable").append('\\n');
+							? "granted" : "not granted / not runtime-grantable").append('\n');
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			report.append("Can draw overlays: ").append(Settings.canDrawOverlays(ctx)).append('\\n');
+			report.append("Can draw overlays: ").append(Settings.canDrawOverlays(ctx)).append('\n');
 		}
 
 		report.append("Accessibility services enabled: ")
 				.append(android.provider.Settings.Secure.getString(ctx.getContentResolver(),
-						android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)).append('\\n');
+						android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)).append('\n');
 
 		try {
 			AppOpsManager appOps = (AppOpsManager) ctx.getSystemService(Context.APP_OPS_SERVICE);
 			int mode = appOps.checkOpNoThrow("android:project_media", android.os.Process.myUid(), pkg);
-			report.append("AppOp android:project_media: ").append(appOpsMode(mode)).append(" (").append(mode).append(")\\n");
+			report.append("AppOp android:project_media: ").append(appOpsMode(mode)).append(" (").append(mode).append(")\n");
 		} catch (Exception e) {
-			report.append("AppOp android:project_media: unavailable: ").append(e).append('\\n');
+			report.append("AppOp android:project_media: unavailable: ").append(e).append('\n');
 		}
 
 		Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain")
@@ -1052,14 +1051,14 @@ public class SettingsFragment extends MainActivityFragment
 		intent.setPackage(pkg);
 		try {
 			var services = pm.queryIntentServices(intent, PackageManager.MATCH_DISABLED_COMPONENTS);
-			out.append(label).append(": ").append(services.size()).append('\\n');
+			out.append(label).append(": ").append(services.size()).append('\n');
 			for (var info : services) {
 				out.append("  ").append(info.serviceInfo.name)
 						.append(" enabled=").append(info.serviceInfo.enabled)
-						.append(" exported=").append(info.serviceInfo.exported).append('\\n');
+						.append(" exported=").append(info.serviceInfo.exported).append('\n');
 			}
 		} catch (Exception e) {
-			out.append(label).append(": query failed: ").append(e).append('\\n');
+			out.append(label).append(": query failed: ").append(e).append('\n');
 		}
 	}
 
