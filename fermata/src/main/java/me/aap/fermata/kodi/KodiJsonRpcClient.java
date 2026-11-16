@@ -63,6 +63,8 @@ public final class KodiJsonRpcClient {
         request.put("params", (params == null) ? new JSONObject() : params);
         request.put("id", requestIds.incrementAndGet());
 
+        KodiDiagnostics.info("Richiesta JSON-RPC: " + method);
+        long startedAt = System.currentTimeMillis();
         HttpURLConnection connection = (HttpURLConnection) endpoint.openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
@@ -110,7 +112,12 @@ public final class KodiJsonRpcClient {
 
             JSONObject result = response.optJSONObject("result");
             if (result == null) throw new IOException("Kodi returned no JSON-RPC result");
+            KodiDiagnostics.info("JSON-RPC " + method + " completata (HTTP " + status
+                    + ", " + (System.currentTimeMillis() - startedAt) + " ms)");
             return result;
+        } catch (IOException | JSONException | RuntimeException e) {
+            KodiDiagnostics.error("Errore JSON-RPC " + method, e);
+            throw e;
         } finally {
             connection.disconnect();
         }
