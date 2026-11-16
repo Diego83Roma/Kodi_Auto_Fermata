@@ -70,5 +70,6 @@ public final class KodiDiagnostics {
     public static synchronized void clear() {
         FermataApplication.get().getSharedPreferences(PREFS,
                 android.content.Context.MODE_PRIVATE).edit().remove(KEY_LOG).apply();
+        info("Log diagnosi svuotato");
     }
 }
