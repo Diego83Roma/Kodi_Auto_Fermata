@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -209,8 +208,8 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showAbout() {
-        String message = "Fermata Kodi Auto\\n"
-                + "Versione: " + BuildConfig.VERSION_NAME + "\\n"
+        String message = "Fermata Kodi Auto\n"
+                + "Versione: " + BuildConfig.VERSION_NAME + "\n"
                 + "Build: " + BuildConfig.VERSION_CODE;
         new AlertDialog.Builder(this).setTitle("Informazioni")
                 .setMessage(message)
