@@ -127,6 +127,17 @@ public final class KodiJsonRpcClient {
         return call("JSONRPC.Version", null);
     }
 
+    /** Opens a Kodi GUI window, optionally navigating to a Kodi library path. */
+    public JSONObject activateWindow(String window, String path)
+            throws IOException, JSONException {
+        JSONObject params = new JSONObject();
+        params.put("window", window);
+        if (path != null && !path.isEmpty()) {
+            params.put("parameters", new JSONArray().put(path));
+        }
+        return call("GUI.ActivateWindow", params);
+    }
+
     public JSONArray getMovies(int start, int end) throws IOException, JSONException {
         JSONObject params = new JSONObject();
         params.put("properties", new JSONArray()

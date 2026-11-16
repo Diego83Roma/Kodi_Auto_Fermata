@@ -107,11 +107,18 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayout.LayoutParams heroLp = lp(-1, -2); heroLp.bottomMargin = dp(18);
         root.addView(hero, heroLp);
 
-        addSection("CONTENUTI");
-        addTile("TV in diretta", "Canali e playlist", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
+        addSection("CONTENUTI FERMATA");
+        addTile("TV in diretta", "Canali e playlist Fermata", "Apri la TV integrata di Fermata", () -> openFermataScreen(R.id.tv_fragment));
         addTile("Libreria", "Cartelle e contenuti multimediali", "Sfoglia i contenuti con Fermata", () -> openFermataScreen(R.id.folders_fragment));
         addTile("Preferiti", "I tuoi contenuti salvati", "Apri i preferiti di Fermata", () -> openFermataScreen(R.id.favorites_fragment));
         addTile("Playlist", "Le tue raccolte personalizzate", "Apri le playlist di Fermata", () -> openFermataScreen(R.id.playlists_fragment));
+
+        addSection("COLLEGAMENTI KODI");
+        addTile("TV in diretta Kodi", "Canali TV configurati in Kodi", "Apri TV in diretta in Kodi", () -> openKodiSection("tvchannels", null));
+        addTile("Film Kodi", "Libreria film di Kodi", "Apri i film in Kodi", () -> openKodiSection("videos", "videodb://movies/titles/"));
+        addTile("Serie TV Kodi", "Libreria serie TV di Kodi", "Apri le serie TV in Kodi", () -> openKodiSection("videos", "videodb://tvshows/titles/"));
+        addTile("Preferiti Kodi", "Preferiti salvati in Kodi", "Apri i preferiti in Kodi", () -> openKodiSection("favouritesbrowser", null));
+        addTile("Playlist Kodi", "Playlist video salvate in Kodi", "Apri le playlist in Kodi", () -> openKodiSection("videos", "special://videoplaylists/"));
 
         addSection("WEB E VIDEO");
         addTile("Web Browser", "Navigazione web integrata", "Apri il browser di Fermata", () -> openBuiltInAddon(R.id.web_browser_fragment));
@@ -135,6 +142,54 @@ public class HomeActivity extends AppCompatActivity {
         intent.putExtra("kodiauto.modern_host", true);
         startActivity(intent);
     }
+
+    private void openKodiSection(String window, String path) {
+        Intent launchIntent = getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
+        if (launchIntent == null) {
+            Toast.makeText(this, "Kodi non risulta installato", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try {
+            startActivity(launchIntent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Impossibile aprire Kodi: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Toast.makeText(this, "Apertura della sezione Kodi...", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            Exception lastError = null;
+            for (int attempt = 0; attempt < 20; attempt++) {
+                try {
+                    KodiJsonRpcClient client = new KodiJsonRpcClient(
+                            KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT,
+                            null, null);
+                    client.activateWindow(window, path);
+                    KodiDiagnostics.info("Aperta sezione Kodi: " + window
+                            + (path == null ? "" : " -> " + path));
+                    return;
+                } catch (Exception e) {
+                    lastError = e;
+                    try {
+                        Thread.sleep(750);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            }
+            final String error = (lastError == null || lastError.getMessage() == null)
+                    ? "Kodi non ha risposto al comando"
+                    : lastError.getMessage();
+            KodiDiagnostics.error("Impossibile aprire la sezione Kodi", lastError);
+            runOnUiThread(() -> Toast.makeText(this,
+                    "Kodi si è avviato, ma non riesco a selezionare la sezione: " + error,
+                    Toast.LENGTH_LONG).show());
+        }, "Kodi-section-launch").start();
+    }
+
 
     private void showSettings() {
         String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Kodi", "Informazioni"};
