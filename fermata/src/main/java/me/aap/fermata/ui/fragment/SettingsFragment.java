@@ -633,6 +633,14 @@ public class SettingsFragment extends MainActivityFragment
 
 		addAddons(set);
 
+		sub1 = set.subSet(o -> o.title = R.string.settings_information);
+		sub1.addButton(o -> {
+			o.title = R.string.settings_version_info;
+			o.onClick = () -> UiUtils.showInfo(a.getContext(),
+					"Fermata Kodi Backend\\nVersione: " + BuildConfig.VERSION_NAME
+							+ "\\nBuild: " + BuildConfig.VERSION_CODE);
+		});
+
 		sub1 = set.subSet(o -> o.title = R.string.other);
 		if (!a.isCarActivityNotMirror()) {
 			sub1.addButton(o -> {
