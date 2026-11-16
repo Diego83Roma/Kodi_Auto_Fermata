@@ -28,7 +28,7 @@ public final class KodiShortcutItem extends ItemBase {
         this.title = getTitleForId(id);
     }
 
-    static FutureSupplier<KodiShortcutItem> create(DefaultMediaLib lib, String id) {
+    public static FutureSupplier<KodiShortcutItem> create(DefaultMediaLib lib, String id) {
         KodiFolderItem parent = lib.getKodiFolderForShortcuts();
         if (getTitleForId(id) == null) return completedNull();
         return completed(new KodiShortcutItem(parent, id));
