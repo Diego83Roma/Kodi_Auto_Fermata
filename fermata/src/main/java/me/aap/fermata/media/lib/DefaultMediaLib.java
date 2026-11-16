@@ -30,6 +30,8 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.kodi.KodiFolderItem;
+import me.aap.fermata.kodi.KodiShortcutItem;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -60,6 +62,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final DefaultPlaylists playlists;
 	private final MediaEngineManager mediaEngineManager;
 	private final MetadataRetriever metadataRetriever;
+	private KodiFolderItem kodiFolder;
 	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
 	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
 	@Nullable
@@ -113,6 +116,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case DefaultFolders.ID -> completed(getFolders());
 				case DefaultFavorites.ID -> completed(getFavorites());
 				case DefaultPlaylists.ID -> completed(getPlaylists());
+				case KodiFolderItem.ID -> completed(getKodiFolderForShortcuts());
 				default -> ifNull(AddonManager.get().getItem(this, null, id), completedNull());
 			};
 		}
@@ -129,6 +133,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case M3uTrackItem.SCHEME -> M3uTrackItem.create(this, id);
 				case DefaultFavorites.SCHEME -> getFavorites().getItem(id);
 				case DefaultPlaylists.SCHEME -> getPlaylists().getItem(id);
+				case KodiShortcutItem.SCHEME -> KodiShortcutItem.create(this, id);
 				default -> ifNull(AddonManager.get().getItem(this, scheme, id), completedNull());
 			};
 		} catch (Throwable ex) {
@@ -162,13 +167,14 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		result.detach();
 
 		if (getRootId().equals(parentMediaId)) {
-			List<MediaItem> items = new ArrayList<>(4);
+			List<MediaItem> items = new ArrayList<>(5);
 			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
 					.onSuccess(i -> {
 						if (i != null) items.add(i);
 					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
+					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
 
 					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
 							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
@@ -232,6 +238,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		String id = p.getLastPlayedItemPref();
 		return ((id != null) && id.equals(i.getId())) ? p.getLastPlayedPosPref() : 0;
+	}
+
+	public synchronized KodiFolderItem getKodiFolderForShortcuts() {
+		if (kodiFolder == null) kodiFolder = new KodiFolderItem(this);
+		return kodiFolder;
 	}
 
 	@NonNull

@@ -102,6 +102,9 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.kodi.KodiJsonRpcClient;
+import me.aap.fermata.kodi.KodiDiagnostics;
+import me.aap.fermata.kodi.KodiShortcutItem;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -501,7 +504,62 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = playFromMediaId(mediaId, extras);
 	}
 
+	private void openKodiShortcut(String mediaId) {
+		String window = KodiShortcutItem.getWindow(mediaId);
+		String path = KodiShortcutItem.getPath(mediaId);
+		if (window == null) return;
+		android.content.Intent launchIntent =
+				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
+		if (launchIntent == null) {
+			Log.w("Kodi non risulta installato: impossibile aprire ", mediaId);
+			return;
+		}
+		launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+				| android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		try {
+			service.startActivity(launchIntent);
+		} catch (Exception e) {
+			Log.e(e, "Impossibile avviare Kodi da Android Auto");
+			return;
+		}
+		new Thread(() -> {
+			KodiJsonRpcClient client = null;
+			Exception lastError = null;
+			for (int attempt = 0; attempt < 20; attempt++) {
+				try {
+					client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
+							KodiJsonRpcClient.DEFAULT_PORT, null, null);
+					client.getApiVersion();
+					lastError = null;
+					break;
+				} catch (Exception e) {
+					lastError = e;
+					try {
+						Thread.sleep(750);
+					} catch (InterruptedException interrupted) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+				}
+			}
+			if (client == null || lastError != null) {
+				KodiDiagnostics.error("Kodi non pronto per il collegamento Android Auto", lastError);
+				return;
+			}
+			try {
+				client.activateWindow(window, path);
+				KodiDiagnostics.info("Aperta sezione Kodi da Android Auto: " + mediaId);
+			} catch (Exception e) {
+				KodiDiagnostics.error("Navigazione Kodi da Android Auto non riuscita", e);
+			}
+		}, "Kodi-Android-Auto").start();
+	}
+
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
+		if (KodiShortcutItem.isKodiShortcutId(mediaId)) {
+			openKodiShortcut(mediaId);
+			return completedVoid();
+		}
 		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
 				return completed((PlayableItem) i);
