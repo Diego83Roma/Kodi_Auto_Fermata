@@ -370,6 +370,8 @@
     <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
     <string name="media_projection_action_text">Start now</string>
 
+    <string name="settings_information">Informazioni</string>
+    <string name="settings_version_info">Versione e build</string>
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player is a free, open source audio and video player with a simple and
