@@ -47,6 +47,10 @@ public final class KodiShortcutItem extends ItemBase {
         };
     }
 
+    public static String getTitle(String id) {
+        return getTitleForId(id);
+    }
+
     public static String getPath(String id) {
         return switch (id) {
             case MOVIES -> "videodb://movies/titles/";

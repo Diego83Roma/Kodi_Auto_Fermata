@@ -192,6 +192,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private String kodiShortcutMediaId;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -459,6 +460,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		if (kodiShortcutMediaId != null) {
+			openKodiShortcut(kodiShortcutMediaId);
+			return;
+		}
 		playerTask.cancel();
 		playerTask = play();
 	}
@@ -557,9 +562,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
 		if (KodiShortcutItem.isKodiShortcutId(mediaId)) {
-			openKodiShortcut(mediaId);
-			return completedVoid();
+			return onStop(false).then(v -> {
+				kodiShortcutMediaId = mediaId;
+				session.setActive(true);
+				String title = KodiShortcutItem.getTitle(mediaId);
+				setMetadata(new MediaMetadataCompat.Builder()
+						.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
+						.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+						.putString(METADATA_KEY_DISPLAY_TITLE, title)
+						.build());
+				PlaybackStateCompat state = new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_PAUSED, 0, 0f)
+						.build();
+				setPlaybackState(state);
+				openKodiShortcut(mediaId);
+				return completedVoid();
+			});
 		}
+		kodiShortcutMediaId = null;
+		setMetadata(null);
 		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
 				return completed((PlayableItem) i);
@@ -601,6 +623,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPause() {
+		if (kodiShortcutMediaId != null) return;
 		PlayableItem i;
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return;
@@ -622,6 +645,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onStop() {
+		if (kodiShortcutMediaId != null) {
+			kodiShortcutMediaId = null;
+			setMetadata(null);
+			onStop(false);
+			return;
+		}
 		onStop(true);
 	}
 

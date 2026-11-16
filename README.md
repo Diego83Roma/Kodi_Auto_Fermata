@@ -19,7 +19,9 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Aggiunto **Impostazioni > Kodi > Log diagnosi**: registro persistente e limitato degli eventi JSON-RPC, tempi di risposta ed errori; il log può essere copiato o svuotato.
 - Il log non registra il contenuto delle richieste, le password o le risposte complete di Kodi.
 - Aggiunta nella schermata moderna una sezione **Collegamenti Kodi** con accessi diretti a **TV in diretta**, **Film**, **Serie TV**, **Preferiti** e **Playlist** di Kodi. I collegamenti avviano Kodi e selezionano la sezione tramite `GUI.ActivateWindow` su JSON-RPC; non creano sorgenti nella libreria tradizionale di Fermata.
-- In preparazione per Android Auto: aggiunta la voce principale **Cartella Kodi** nell'albero del servizio media esistente; al suo interno sono esposte le cinque scorciatoie che aprono le rispettive sezioni.
+- Integrata **Cartella Kodi** nell'albero del servizio media originale di Fermata; al suo interno sono esposte le cinque scorciatoie Kodi.
+- Le scorciatoie Android Auto aggiornano metadata e stato della sessione Fermata come comandi virtuali, poi aprono Kodi e inviano la navigazione JSON-RPC. I comandi Play/Stop della sessione virtuale sono gestiti senza creare un player fittizio.
+- Le voci degli addon Fermata (inclusa TV) vengono elencate prima di **Cartella Kodi**, così la nuova cartella non anticipa le voci originali nella schermata principale.
 
 ### Compilazione e verifica
 - Build 56 (`2.0.2-Kodi-0.1.7`, code `276`): verificata dall'utente sul dispositivo; tutti e cinque i collegamenti della schermata moderna aprono correttamente le rispettive sezioni Kodi.
@@ -29,7 +31,9 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Test sul dispositivo confermato dall'utente: **il collegamento JSON-RPC locale con Kodi funziona**.
 - Build 52 (`2.0.2-Kodi-0.1.6`, code `275`): i collegamenti Kodi sono presenti ma il test sul dispositivo ha evidenziato che `GUI.ActivateWindow` veniva interpretato erroneamente quando Kodi restituiva un risultato scalare (`"OK"`). Il ciclo di avvio ripeteva inoltre il comando di navigazione fino a 20 volte.
 - Correzione inclusa nella build 56: il client accetta risultati JSON-RPC scalari, attende Kodi riprovando solo `JSONRPC.Version` e invia `GUI.ActivateWindow` una sola volta.
-- Build 57 (`2.0.2-Kodi-0.1.8`, code `277`): compilazione fallita per il metodo `KodiShortcutItem.create()` non accessibile da `DefaultMediaLib` (visibilità package-private). Correzione inclusa nella build 58: metodo reso pubblico; versione `2.0.2-Kodi-0.1.9`, code `278`. La verifica su Android Auto resta da eseguire sul dispositivo.
+- Build 57 (`2.0.2-Kodi-0.1.8`, code `277`): compilazione fallita per il metodo `KodiShortcutItem.create()` non accessibile da `DefaultMediaLib` (visibilità package-private). Correzione inclusa nella build 58: metodo reso pubblico; versione `2.0.2-Kodi-0.1.9`, code `278`.
+- Build 58: l'utente ha confermato che Android Auto mostra Cartella Kodi e che la selezione apre la sezione corretta sul telefono, ma Android Auto segnala **Impossibile caricare la selezione**. La diagnosi ha individuato che il callback apriva Kodi senza aggiornare metadata/stato della sessione multimediale.
+- Build 59 (in preparazione): versione `2.0.2-Kodi-0.1.10`, code `279`; aggiunge lo stato virtuale della sessione per le scorciatoie Kodi e riordina le voci root per mantenere TV/addon Fermata prima di Cartella Kodi. Test su Android Auto ancora da eseguire.
 
 ### Limiti e prossimi passi
 - I collegamenti aprono le sezioni nell’app Kodi separata: non incorporano Kodi nella schermata Fermata e non trasferiscono ancora la riproduzione al player Fermata.

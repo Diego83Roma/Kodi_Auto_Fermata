@@ -230,6 +230,10 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 				if (ActivityCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PERMISSION_GRANTED) {
 					return;
 				}
+				if (currentItem == null) {
+					stopForeground(false);
+					return;
+				}
 				NotificationManagerCompat.from(this).notify(NOTIF_ID, createNotification(st, currentItem));
 				stopForeground(false);
 			}

@@ -174,11 +174,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
-					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
-
 					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
 							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
-									a -> a.getRootItem(this)))).onCompletion((r, err) -> {
+									a -> a.getRootItem(this))))
+					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
+					.onCompletion((r, err) -> {
 						if (err != null) Log.e(err);
 						result.sendResult(items, null);
 					});
