@@ -154,8 +154,12 @@ public final class KodiJsonRpcClient {
     public JSONArray getAddons() throws IOException, JSONException {
         JSONObject params = new JSONObject();
         params.put("properties", new JSONArray().put("name").put("version")
-                .put("enabled").put("type"));
+                .put("enabled").put("installed").put("icon"));
         return call("Addons.GetAddons", params).optJSONArray("addons");
+    }
+
+    public JSONObject executeAddon(String addonId) throws IOException, JSONException {
+        return call("Addons.ExecuteAddon", new JSONObject().put("addonid", addonId));
     }
 
     /**
