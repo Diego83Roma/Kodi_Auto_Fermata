@@ -181,24 +181,26 @@ public class HomeActivity extends AppCompatActivity {
     private void testKodiConnection() {
         Toast.makeText(this, "Verifica collegamento a Kodi...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
-            final String message;
-            final boolean connected;
+            String resultMessage;
+            boolean resultConnected;
             try {
                 org.json.JSONObject result = new KodiJsonRpcClient(
                         KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT,
                         null, null).getApiVersion();
                 org.json.JSONObject version = result.optJSONObject("version");
                 if (version == null) version = result;
-                message = "Collegamento riuscito. Kodi JSON-RPC "
+                resultMessage = "Collegamento riuscito. Kodi JSON-RPC "
                         + version.optInt("major") + "."
                         + version.optInt("minor") + "."
                         + version.optInt("patch");
-                connected = true;
+                resultConnected = true;
             } catch (Exception e) {
-                message = "Collegamento non riuscito: "
+                resultMessage = "Collegamento non riuscito: "
                         + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage());
-                connected = false;
+                resultConnected = false;
             }
+            final String message = resultMessage;
+            final boolean connected = resultConnected;
             runOnUiThread(() -> new AlertDialog.Builder(this)
                     .setTitle(connected ? "Kodi collegato" : "Kodi non raggiungibile")
                     .setMessage(message)
