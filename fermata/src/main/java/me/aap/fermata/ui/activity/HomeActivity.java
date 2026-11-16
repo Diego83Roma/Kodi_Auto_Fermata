@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -19,7 +20,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.kodi.KodiJsonRpcClient;
 
 
 
@@ -132,13 +135,14 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showSettings() {
-        String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Informazioni"};
+        String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Kodi", "Informazioni"};
         new AlertDialog.Builder(this).setTitle("Impostazioni Fermata Kodi Auto")
                 .setItems(sections, (dialog, which) -> {
                     switch (which) {
                         case 0: showInterfaceSettings(); break;
                         case 1: showResizeInfo(); break;
                         case 2: showPlaybackSettings(); break;
+                        case 3: showKodiSettings(); break;
                         default: showAbout(); break;
                     }
                 }).setNegativeButton("Chiudi", null).show();
@@ -168,9 +172,48 @@ public class HomeActivity extends AppCompatActivity {
                 .setNegativeButton("Chiudi", null).show();
     }
 
+    private void showKodiSettings() {
+        new AlertDialog.Builder(this).setTitle("Kodi")
+                .setMessage("Verifica il collegamento locale a Kodi (127.0.0.1:8080).")
+                .setPositiveButton("Verifica collegamento", (dialog, which) -> testKodiConnection())
+                .setNegativeButton("Chiudi", null).show();
+    }
+
+    private void testKodiConnection() {
+        Toast.makeText(this, "Verifica collegamento a Kodi...", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            final String message;
+            final boolean connected;
+            try {
+                org.json.JSONObject result = new KodiJsonRpcClient(
+                        KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT,
+                        null, null).getApiVersion();
+                org.json.JSONObject version = result.optJSONObject("version");
+                if (version == null) version = result;
+                message = "Collegamento riuscito. Kodi JSON-RPC "
+                        + version.optInt("major") + "."
+                        + version.optInt("minor") + "."
+                        + version.optInt("patch");
+                connected = true;
+            } catch (Exception e) {
+                message = "Collegamento non riuscito: "
+                        + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage());
+                connected = false;
+            }
+            runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle(connected ? "Kodi collegato" : "Kodi non raggiungibile")
+                    .setMessage(message)
+                    .setPositiveButton("OK", null)
+                    .show());
+        }, "Kodi-connection-test").start();
+    }
+
     private void showAbout() {
-        new AlertDialog.Builder(this).setTitle("Fermata Kodi Auto")
-                .setMessage("Interfaccia moderna di Fermata.")
+        String message = "Fermata Kodi Auto\\n"
+                + "Versione: " + BuildConfig.VERSION_NAME + "\\n"
+                + "Build: " + BuildConfig.VERSION_CODE;
+        new AlertDialog.Builder(this).setTitle("Informazioni")
+                .setMessage(message)
                 .setPositiveButton("OK", null).show();
     }
 
