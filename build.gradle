@@ -24,6 +24,12 @@ ext {
                     hasSettings: false
             ],
             [
+                    name       : 'kodi',
+                    icon       : 'kodiauto_original_logo',
+                    class      : 'me.aap.fermata.kodi.KodiMediaLibraryAddon',
+                    hasSettings: false
+            ],
+            [
                     name   : 'subgen',
                     icon   : 'subgen',
                     class  : 'me.aap.fermata.addon.SubGenAddon',

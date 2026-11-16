@@ -18,18 +18,18 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Il test interroga il servizio JSON-RPC locale di Kodi all'indirizzo `http://127.0.0.1:8080/jsonrpc`, usando inizialmente la configurazione senza autenticazione.
 - Aggiunto **Impostazioni > Kodi > Log diagnosi**: registro persistente e limitato degli eventi JSON-RPC, tempi di risposta ed errori; il log può essere copiato o svuotato.
 - Il log non registra il contenuto delle richieste, le password o le risposte complete di Kodi.
+- Integrata la sorgente **Kodi** nella libreria media di Fermata: cartelle **Film** e **Serie TV**, elenco dei titoli e navigazione degli episodi tramite `VideoLibrary.GetMovies`, `VideoLibrary.GetTVShows` e `VideoLibrary.GetEpisodes`.
 
 ### Compilazione e verifica
 - Build 42: **fallita** durante la compilazione per una doppia assegnazione potenziale in `HomeActivity.java`.
 - Build 43: annullata perché il successivo push README ha avviato una nuova esecuzione.
 - Build 44: [Action – Document current Kodi backend development progress](https://github.com/Diego83Roma/Kodi_Auto_Fermata/actions/runs/43842668751), **completata con successo**; APK `arm64` pubblicato.
 - Test sul dispositivo confermato dall'utente: **il collegamento JSON-RPC locale con Kodi funziona**.
-- Versione in preparazione: `2.0.2-Kodi-0.1.4`, build code `273`; contiene il log diagnostico e la strumentazione del client.
+- Versione in preparazione: `2.0.2-Kodi-0.1.5`, build code `274`; contiene il log diagnostico e il catalogo Kodi navigabile.
 
-### Prossimi passi
-1. Verificare la nuova build con il log diagnosi sul telefono.
-2. Collegare il client Kodi alla libreria media di Fermata come sorgente navigabile **Film** e **Serie TV**.
-3. In una fase successiva, implementare e verificare la risoluzione dei percorsi Kodi `/vfs/` e la riproduzione nel player Fermata. Gli Add-on Kodi restano una fase separata, dopo il catalogo base.
+### Limiti e prossimi passi
+- In questa versione il catalogo Film/Serie TV è navigabile ma non avvia ancora la riproduzione in Fermata: la risoluzione dei percorsi Kodi `/vfs/` e il passaggio al player Fermata devono essere implementati e verificati separatamente.
+- Gli Add-on Kodi restano una fase successiva, dopo la verifica del catalogo e della riproduzione dei file della libreria.
 
 ## Fermata Media Player
 [<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
