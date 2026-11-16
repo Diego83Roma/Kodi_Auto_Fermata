@@ -151,6 +151,7 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         try {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(launchIntent);
         } catch (Exception e) {
             Toast.makeText(this, "Impossibile aprire Kodi: " + e.getMessage(),
@@ -161,15 +162,17 @@ public class HomeActivity extends AppCompatActivity {
         Toast.makeText(this, "Apertura della sezione Kodi...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             Exception lastError = null;
+            KodiJsonRpcClient client = null;
+
+            // Wait for Kodi's JSON-RPC service to become available. Retry only the
+            // harmless version probe, never GUI.ActivateWindow itself.
             for (int attempt = 0; attempt < 20; attempt++) {
                 try {
-                    KodiJsonRpcClient client = new KodiJsonRpcClient(
-                            KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT,
-                            null, null);
-                    client.activateWindow(window, path);
-                    KodiDiagnostics.info("Aperta sezione Kodi: " + window
-                            + (path == null ? "" : " -> " + path));
-                    return;
+                    client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
+                            KodiJsonRpcClient.DEFAULT_PORT, null, null);
+                    client.getApiVersion();
+                    lastError = null;
+                    break;
                 } catch (Exception e) {
                     lastError = e;
                     try {
@@ -180,16 +183,32 @@ public class HomeActivity extends AppCompatActivity {
                     }
                 }
             }
-            final String error = (lastError == null || lastError.getMessage() == null)
-                    ? "Kodi non ha risposto al comando"
-                    : lastError.getMessage();
-            KodiDiagnostics.error("Impossibile aprire la sezione Kodi", lastError);
-            runOnUiThread(() -> Toast.makeText(this,
-                    "Kodi si è avviato, ma non riesco a selezionare la sezione: " + error,
-                    Toast.LENGTH_LONG).show());
+
+            if (client == null || lastError != null) {
+                final Exception error = lastError;
+                KodiDiagnostics.error("Servizio Kodi non pronto: impossibile inviare la navigazione", error);
+                final String message = (error == null || error.getMessage() == null)
+                        ? "Servizio JSON-RPC non disponibile" : error.getMessage();
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Kodi si è avviato, ma il servizio di controllo non risponde: " + message,
+                        Toast.LENGTH_LONG).show());
+                return;
+            }
+
+            try {
+                client.activateWindow(window, path);
+                KodiDiagnostics.info("Aperta sezione Kodi: " + window
+                        + (path == null ? "" : " -> " + path));
+            } catch (Exception e) {
+                KodiDiagnostics.error("Comando di navigazione Kodi non riuscito", e);
+                final String message = (e.getMessage() == null)
+                        ? e.getClass().getSimpleName() : e.getMessage();
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Kodi è aperto, ma non ha accettato la navigazione: " + message,
+                        Toast.LENGTH_LONG).show());
+            }
         }, "Kodi-section-launch").start();
     }
-
 
     private void showSettings() {
         String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Kodi", "Informazioni"};
