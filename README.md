@@ -16,18 +16,20 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Aggiunte nella schermata moderna **Impostazioni > Informazioni** le informazioni di versione e numero build.
 - Aggiunta la sezione **Kodi** nelle impostazioni moderne con il comando **Verifica collegamento**.
 - Il test interroga il servizio JSON-RPC locale di Kodi all'indirizzo `http://127.0.0.1:8080/jsonrpc`, usando inizialmente la configurazione senza autenticazione.
-- Corretto il test Java per evitare la doppia assegnazione delle variabili nel blocco `try/catch`.
+- Aggiunto **Impostazioni > Kodi > Log diagnosi**: registro persistente e limitato degli eventi JSON-RPC, tempi di risposta ed errori; il log può essere copiato o svuotato.
+- Il log non registra il contenuto delle richieste, le password o le risposte complete di Kodi.
 
 ### Compilazione e verifica
-- Build 42: **fallita** durante la compilazione. Il log indicava l'assegnazione potenzialmente multipla di `message` e `connected` in `HomeActivity.java`.
-- Correzione: commit [`9d572cc`](https://github.com/Diego83Roma/Kodi_Auto_Fermata/commit/9d572cc9f373dcf01b05c9ba3a54b6c52a4ae623).
-- Build 43: [Action – Fix Kodi connection test Java compilation](https://github.com/Diego83Roma/Kodi_Auto_Fermata/actions/runs/43842513491). **In esecuzione al momento dell'ultimo aggiornamento di questa sezione**; APK non ancora verificato o disponibile.
-- Una compilazione riuscita non sostituisce il test sul telefono: il collegamento va provato con Kodi installato e il controllo HTTP attivo sulla porta 8080.
+- Build 42: **fallita** durante la compilazione per una doppia assegnazione potenziale in `HomeActivity.java`.
+- Build 43: annullata perché il successivo push README ha avviato una nuova esecuzione.
+- Build 44: [Action – Document current Kodi backend development progress](https://github.com/Diego83Roma/Kodi_Auto_Fermata/actions/runs/43842668751), **completata con successo**; APK `arm64` pubblicato.
+- Test sul dispositivo confermato dall'utente: **il collegamento JSON-RPC locale con Kodi funziona**.
+- Versione in preparazione: `2.0.2-Kodi-0.1.4`, build code `273`; contiene il log diagnostico e la strumentazione del client.
 
 ### Prossimi passi
-1. Verificare che la Build 43 termini con esito positivo e che venga pubblicato l'APK `arm64`.
-2. Installare l'APK e verificare sul telefono la schermata Informazioni e il test JSON-RPC con Kodi in esecuzione.
-3. Solo dopo il test, valutare l'integrazione della libreria Kodi (film/serie) nella libreria media di Fermata e verificare separatamente il percorso di riproduzione.
+1. Verificare la nuova build con il log diagnosi sul telefono.
+2. Collegare il client Kodi alla libreria media di Fermata come sorgente navigabile **Film** e **Serie TV**.
+3. In una fase successiva, implementare e verificare la risoluzione dei percorsi Kodi `/vfs/` e la riproduzione nel player Fermata. Gli Add-on Kodi restano una fase separata, dopo il catalogo base.
 
 ## Fermata Media Player
 [<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
