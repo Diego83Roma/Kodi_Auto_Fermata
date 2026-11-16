@@ -2,6 +2,8 @@ package me.aap.fermata.ui.activity;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -22,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.kodi.KodiJsonRpcClient;
+import me.aap.fermata.kodi.KodiDiagnostics;
 
 
 
@@ -175,10 +178,36 @@ public class HomeActivity extends AppCompatActivity {
         new AlertDialog.Builder(this).setTitle("Kodi")
                 .setMessage("Verifica il collegamento locale a Kodi (127.0.0.1:8080).")
                 .setPositiveButton("Verifica collegamento", (dialog, which) -> testKodiConnection())
+                .setNeutralButton("Log diagnosi", (dialog, which) -> showKodiDiagnostics())
                 .setNegativeButton("Chiudi", null).show();
     }
 
+    private void showKodiDiagnostics() {
+        TextView content = text(KodiDiagnostics.getLog(), 12, Color.WHITE, false);
+        content.setTextIsSelectable(true);
+        content.setPadding(dp(12), dp(8), dp(12), dp(8));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(content);
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Log diagnosi Kodi")
+                .setView(scroll)
+                .setPositiveButton("Copia", (d, w) -> {
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Log diagnosi Kodi",
+                                KodiDiagnostics.getLog()));
+                        Toast.makeText(this, "Log copiato", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNeutralButton("Svuota", (d, w) -> {
+                    KodiDiagnostics.clear();
+                    showKodiDiagnostics();
+                })
+                .setNegativeButton("Chiudi", null).create();
+        dialog.show();
+    }
+
     private void testKodiConnection() {
+        KodiDiagnostics.info("Avviato test del collegamento Kodi");
         Toast.makeText(this, "Verifica collegamento a Kodi...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             String resultMessage;
@@ -194,7 +223,9 @@ public class HomeActivity extends AppCompatActivity {
                         + version.optInt("minor") + "."
                         + version.optInt("patch");
                 resultConnected = true;
+                KodiDiagnostics.info("Test collegamento Kodi riuscito");
             } catch (Exception e) {
+                KodiDiagnostics.error("Test collegamento Kodi non riuscito", e);
                 resultMessage = "Collegamento non riuscito: "
                         + ((e.getMessage() == null) ? e.getClass().getSimpleName() : e.getMessage());
                 resultConnected = false;
