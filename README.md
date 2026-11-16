@@ -1,6 +1,34 @@
 ## !!!Be aware of scam!!! The sites like https :// fermata-auto . com  are 100% scam. This app is free and opensource!
 
 
+## Stato del progetto – branch `kodi-backend-prototype`
+
+Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fermata. Il ramo `main` e il ramo `fermata-kodi-auto-clean` non fanno parte delle modifiche correnti.
+
+### Obiettivo e vincoli
+- Mantenere l'interfaccia moderna già presente in Fermata.
+- Fermata resta l'interfaccia/player Android Auto; Kodi resta un'app separata sullo stesso telefono.
+- Non incorporare l'interfaccia completa di Kodi e non duplicare i servizi Android Auto.
+- Non modificare il design dell'interfaccia senza una richiesta esplicita.
+- La riproduzione video in Android Auto è destinata all'uso da fermo o al passeggero.
+
+### Completato nel codice
+- Aggiunte nella schermata moderna **Impostazioni > Informazioni** le informazioni di versione e numero build.
+- Aggiunta la sezione **Kodi** nelle impostazioni moderne con il comando **Verifica collegamento**.
+- Il test interroga il servizio JSON-RPC locale di Kodi all'indirizzo `http://127.0.0.1:8080/jsonrpc`, usando inizialmente la configurazione senza autenticazione.
+- Corretto il test Java per evitare la doppia assegnazione delle variabili nel blocco `try/catch`.
+
+### Compilazione e verifica
+- Build 42: **fallita** durante la compilazione. Il log indicava l'assegnazione potenzialmente multipla di `message` e `connected` in `HomeActivity.java`.
+- Correzione: commit [`9d572cc`](https://github.com/Diego83Roma/Kodi_Auto_Fermata/commit/9d572cc9f373dcf01b05c9ba3a54b6c52a4ae623).
+- Build 43: [Action – Fix Kodi connection test Java compilation](https://github.com/Diego83Roma/Kodi_Auto_Fermata/actions/runs/43842513491). **In esecuzione al momento dell'ultimo aggiornamento di questa sezione**; APK non ancora verificato o disponibile.
+- Una compilazione riuscita non sostituisce il test sul telefono: il collegamento va provato con Kodi installato e il controllo HTTP attivo sulla porta 8080.
+
+### Prossimi passi
+1. Verificare che la Build 43 termini con esito positivo e che venga pubblicato l'APK `arm64`.
+2. Installare l'APK e verificare sul telefono la schermata Informazioni e il test JSON-RPC con Kodi in esecuzione.
+3. Solo dopo il test, valutare l'integrazione della libreria Kodi (film/serie) nella libreria media di Fermata e verificare separatamente il percorso di riproduzione.
+
 ## Fermata Media Player
 [<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
 
