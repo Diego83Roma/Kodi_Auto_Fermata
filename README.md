@@ -9,7 +9,7 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Mantenere l'interfaccia moderna già presente in Fermata.
 - Fermata resta l'interfaccia/player Android Auto; Kodi resta un'app separata sullo stesso telefono.
 - Non incorporare l'interfaccia completa di Kodi e non duplicare i servizi Android Auto.
-- Non modificare il design dell'interfaccia senza una richiesta esplicita.
+- Le modifiche alla presentazione Android Auto devono restare separate e verificabili rispetto alla UI moderna del telefono.
 - La riproduzione video in Android Auto è destinata all'uso da fermo o al passeggero.
 
 ### Completato nel codice
@@ -33,7 +33,8 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Correzione inclusa nella build 56: il client accetta risultati JSON-RPC scalari, attende Kodi riprovando solo `JSONRPC.Version` e invia `GUI.ActivateWindow` una sola volta.
 - Build 57 (`2.0.2-Kodi-0.1.8`, code `277`): compilazione fallita per il metodo `KodiShortcutItem.create()` non accessibile da `DefaultMediaLib` (visibilità package-private). Correzione inclusa nella build 58: metodo reso pubblico; versione `2.0.2-Kodi-0.1.9`, code `278`.
 - Build 58: l'utente ha confermato che Android Auto mostra Cartella Kodi e che la selezione apre la sezione corretta sul telefono, ma Android Auto segnala **Impossibile caricare la selezione**. La diagnosi ha individuato che il callback apriva Kodi senza aggiornare metadata/stato della sessione multimediale.
-- Build 59 (in preparazione): versione `2.0.2-Kodi-0.1.10`, code `279`; aggiunge lo stato virtuale della sessione per le scorciatoie Kodi e riordina le voci root per mantenere TV/addon Fermata prima di Cartella Kodi. Test su Android Auto ancora da eseguire.
+- Build 59 (`2.0.2-Kodi-0.1.10`, code `279`): compilazione completata; l'utente ha installato la build e confermato il corretto funzionamento sul telefono. Prova Android Auto in auto pianificata.
+- Build 60 (test grafico): versione `2.0.2-Kodi-0.1.11`, code `280`; cambia i suggerimenti di presentazione del MediaBrowser da elenco a griglia (`CONTENT_STYLE_GRID_ITEM_HINT_VALUE`) per le voci sfogliabili e riproducibili. È un suggerimento al client Android Auto: la resa effettiva dipende dalla versione di Android Auto e dall'host dell'auto, e non replica integralmente la schermata moderna del telefono. Tutte le modifiche Kodi della build 59 restano incluse.
 
 ### Limiti e prossimi passi
 - I collegamenti aprono le sezioni nell’app Kodi separata: non incorporano Kodi nella schermata Fermata e non trasferiscono ancora la riproduzione al player Fermata.
