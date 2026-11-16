@@ -110,8 +110,19 @@ public final class KodiJsonRpcClient {
                 throw new KodiRpcException(error.optInt("code"), error.optString("message"));
             }
 
-            JSONObject result = response.optJSONObject("result");
-            if (result == null) throw new IOException("Kodi returned no JSON-RPC result");
+            // Kodi methods may return a JSON object OR a scalar status such as "OK".
+            // GUI.ActivateWindow returns a scalar on several Kodi versions; treating it
+            // as a missing object made a successful navigation look like a failure.
+            Object rawResult = response.opt("result");
+            if (rawResult == null || rawResult == JSONObject.NULL) {
+                throw new IOException("Kodi returned no JSON-RPC result");
+            }
+            JSONObject result;
+            if (rawResult instanceof JSONObject) {
+                result = (JSONObject) rawResult;
+            } else {
+                result = new JSONObject().put("value", rawResult);
+            }
             KodiDiagnostics.info("JSON-RPC " + method + " completata (HTTP " + status
                     + ", " + (System.currentTimeMillis() - startedAt) + " ms)");
             return result;
