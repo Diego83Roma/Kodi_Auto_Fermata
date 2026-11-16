@@ -24,6 +24,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,6 +62,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.SubGenAddon;
+import me.aap.fermata.kodi.KodiJsonRpcClient;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -632,6 +635,31 @@ public class SettingsFragment extends MainActivityFragment
 		addSubtitlePrefs(a.getContext(), sub1, mediaPrefs, isCar);
 
 		addAddons(set);
+
+		sub1 = set.subSet(o -> o.title = R.string.kodi_backend);
+		sub1.addButton(o -> {
+			o.title = R.string.kodi_test_connection;
+			o.subtitle = R.string.kodi_test_connection_sub;
+			o.onClick = () -> {
+				Context context = a.getContext();
+				new Thread(() -> {
+					String message;
+					try {
+						var version = new KodiJsonRpcClient("127.0.0.1", 8080, null, null)
+								.getApiVersion();
+						message = context.getString(R.string.kodi_connection_ok,
+									version.optInt("major"), version.optInt("minor"),
+									version.optInt("patch"));
+					} catch (Exception ex) {
+						message = context.getString(R.string.kodi_connection_error,
+									String.valueOf(ex.getMessage()));
+					}
+					String result = message;
+					new Handler(Looper.getMainLooper()).post(() ->
+								UiUtils.showInfo(context, result));
+				}, "Kodi-connection-test").start();
+			};
+		});
 
 		sub1 = set.subSet(o -> o.title = R.string.settings_information);
 		sub1.addButton(o -> {
