@@ -19,9 +19,11 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Aggiunto **Impostazioni > Kodi > Log diagnosi**: registro persistente e limitato degli eventi JSON-RPC, tempi di risposta ed errori; il log può essere copiato o svuotato.
 - Il log non registra il contenuto delle richieste, le password o le risposte complete di Kodi.
 - Aggiunta nella schermata moderna una sezione **Collegamenti Kodi** con accessi diretti a **TV in diretta**, **Film**, **Serie TV**, **Preferiti** e **Playlist** di Kodi. I collegamenti avviano Kodi e selezionano la sezione tramite `GUI.ActivateWindow` su JSON-RPC; non creano sorgenti nella libreria tradizionale di Fermata.
-- Integrata **Cartella Kodi** nell'albero del servizio media originale di Fermata; al suo interno sono esposte le cinque scorciatoie Kodi.
-- Le scorciatoie Android Auto aggiornano metadata e stato della sessione Fermata come comandi virtuali, poi aprono Kodi e inviano la navigazione JSON-RPC. I comandi Play/Stop della sessione virtuale sono gestiti senza creare un player fittizio.
-- Le voci degli addon Fermata (inclusa TV) vengono elencate prima di **Cartella Kodi**, così la nuova cartella non anticipa le voci originali nella schermata principale.
+- Integrata **Cartella Kodi** nell'albero MediaBrowser originale di Fermata, come unico punto d'ingresso Kodi nella schermata principale; rimossi i collegamenti Kodi duplicati al livello root.
+- Le categorie **Film Kodi** e **Telefilm Kodi** sono ora nodi `BROWSABLE`: interrogano `VideoLibrary.GetMovies` e `VideoLibrary.GetTVShows` su JSON-RPC e mostrano i contenuti effettivi della libreria.
+- Le serie TV aprono un secondo livello con gli episodi ottenuti tramite `VideoLibrary.GetEpisodes`.
+- Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
+- Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
 ### Compilazione e verifica
 - Build 56 (`2.0.2-Kodi-0.1.7`, code `276`): verificata dall'utente sul dispositivo; tutti e cinque i collegamenti della schermata moderna aprono correttamente le rispettive sezioni Kodi.
@@ -36,6 +38,13 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Build 59 (`2.0.2-Kodi-0.1.10`, code `279`): compilazione completata; l'utente ha installato la build e confermato il corretto funzionamento sul telefono. Prova Android Auto in auto pianificata.
 - Build 60 (test grafico): versione `2.0.2-Kodi-0.1.11`, code `280`; ha provato i suggerimenti MediaBrowser a griglia. L'utente ha verificato che la differenza era minima.
 - Build 61 (test elenco verticale): versione `2.0.2-Kodi-0.1.12`, code `281`; ripristina i suggerimenti MediaBrowser a elenco verticale. Porta TV Kodi e Playlist Kodi direttamente al livello principale insieme a Cartella Kodi, prima delle categorie standard. Aggiunge artwork alla sessione virtuale Kodi e registra il comando Play Android Auto; dopo una risposta JSON-RPC positiva ripristina lo stato virtuale in pausa. Migliora la presentazione ma non simula una riproduzione reale: durata e avanzamento restano assenti finché Kodi non viene integrato come sorgente di playback.
+
+### Build 62 – browsing libreria Kodi (in verifica)
+- Versione prevista: `2.0.2-Kodi-0.1.13`, code `282`.
+- Corretto il modello MediaBrowser: Film e Telefilm sono cartelle sfogliabili, non elementi riproducibili virtuali.
+- Aggiunti i modelli per film, serie ed episodi; la selezione di un film/episodio invia `Player.Open` al backend Kodi locale.
+- Rimossi TV Kodi e Playlist Kodi duplicati dalla root; resta un solo punto d'ingresso Cartella Kodi.
+- La compilazione e il test sul dispositivo non sono ancora confermati. Le categorie TV in diretta, Preferiti e Playlist sono temporaneamente escluse dalla Cartella Kodi e restano un lavoro successivo.
 
 ### Esito del test utente Build 59/60
 - Build 59: in Android Auto le voci risultavano 3 più Altro; TV e Playlist Kodi restavano in Altro. La selezione Kodi apriva la sezione sul telefono, ma Android Auto mostrava artwork grigio, posizione 0 e Play senza effetto percepibile.
