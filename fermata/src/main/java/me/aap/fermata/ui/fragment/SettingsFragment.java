@@ -19,6 +19,7 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -26,9 +27,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -63,6 +67,7 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.kodi.KodiJsonRpcClient;
+import me.aap.fermata.kodi.KodiSettings;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -290,6 +295,52 @@ public class SettingsFragment extends MainActivityFragment
 		});
 		subGen.contributeSettings(ctx, ps, subGenSet, PrefCondition.create(ps, SubGenAddon.ENABLED),
 				false);
+	}
+
+	private static void showKodiConnectionSettings(Context context) {
+		EditText username = new EditText(context);
+		username.setSingleLine(true);
+		username.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
+		username.setHint(R.string.kodi_username);
+		EditText password = new EditText(context);
+		password.setSingleLine(true);
+		password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+		password.setHint(R.string.kodi_password);
+
+		try {
+			username.setText(KodiSettings.getUsername(context));
+			password.setText(KodiSettings.getPassword(context));
+		} catch (Exception e) {
+			UiUtils.showInfo(context, context.getString(R.string.kodi_connection_error,
+					String.valueOf(e.getMessage())));
+			return;
+		}
+
+		LinearLayout fields = new LinearLayout(context);
+		fields.setOrientation(LinearLayout.VERTICAL);
+		int padding = (int) (20 * context.getResources().getDisplayMetrics().density);
+		fields.setPadding(padding, padding / 2, padding, 0);
+		fields.addView(username, new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+		fields.addView(password, new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+		new AlertDialog.Builder(context)
+				.setTitle(R.string.kodi_connection_settings)
+				.setMessage(R.string.kodi_connection_local_info)
+				.setView(fields)
+				.setNegativeButton(android.R.string.cancel, null)
+				.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+					try {
+						KodiSettings.save(context, username.getText().toString(),
+								password.getText().toString());
+						UiUtils.showInfo(context, context.getString(R.string.kodi_settings_saved));
+					} catch (Exception e) {
+						UiUtils.showInfo(context, context.getString(R.string.kodi_connection_error,
+								String.valueOf(e.getMessage())));
+					}
+				})
+				.show();
 	}
 
 	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
@@ -638,6 +689,11 @@ public class SettingsFragment extends MainActivityFragment
 
 		sub1 = set.subSet(o -> o.title = R.string.kodi_backend);
 		sub1.addButton(o -> {
+			o.title = R.string.kodi_connection_settings;
+			o.subtitle = R.string.kodi_connection_settings_sub;
+			o.onClick = () -> showKodiConnectionSettings(a.getContext());
+		});
+		sub1.addButton(o -> {
 			o.title = R.string.kodi_test_connection;
 			o.subtitle = R.string.kodi_test_connection_sub;
 			o.onClick = () -> {
@@ -645,8 +701,7 @@ public class SettingsFragment extends MainActivityFragment
 				new Thread(() -> {
 					String message;
 					try {
-						var version = new KodiJsonRpcClient("127.0.0.1", 8080, null, null)
-								.getApiVersion();
+						var version = KodiSettings.createClient(context).getApiVersion();
 						message = context.getString(R.string.kodi_connection_ok,
 									version.optInt("major"), version.optInt("minor"),
 									version.optInt("patch"));
