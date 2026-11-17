@@ -513,10 +513,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = playFromMediaId(mediaId, extras);
 	}
 
+	private void setKodiError(String message) {
+		KodiDiagnostics.error(message, null);
+		handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+				.setActions(ACTION_PLAY | ACTION_STOP)
+				.setState(STATE_ERROR, 0, 0f).build()));
+	}
+
 	private void openKodiShortcut(String mediaId) {
 		String window = KodiShortcutItem.getWindow(mediaId);
 		String path = KodiShortcutItem.getPath(mediaId);
-		if (window == null) return;
+		if (window == null) {
+			setKodiError("Destinazione Kodi non riconosciuta: " + mediaId);
+			return;
+		}
 		android.content.Intent launchIntent =
 				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
 		if (launchIntent == null) {
@@ -552,6 +562,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}
 			if (client == null || lastError != null) {
 				KodiDiagnostics.error("Kodi non pronto per il collegamento Android Auto", lastError);
+				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_ERROR, 0, 0f).build()));
 				return;
 			}
 			try {
@@ -559,6 +572,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				KodiDiagnostics.info("Aperta sezione Kodi da Android Auto: " + mediaId);
 			} catch (Exception e) {
 				KodiDiagnostics.error("Navigazione Kodi da Android Auto non riuscita", e);
+				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_ERROR, 0, 0f).build()));
 			}
 		}, "Kodi-Android-Auto").start();
 	}
@@ -570,7 +586,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		android.content.Intent launchIntent =
 				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
 		if (launchIntent == null) {
-			KodiDiagnostics.error("Kodi non risulta installato: impossibile riprodurre " + mediaId, null);
+			setKodiError("Kodi non risulta installato: impossibile riprodurre " + mediaId);
 			return;
 		}
 		launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -578,7 +594,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		try {
 			service.startActivity(launchIntent);
 		} catch (Exception e) {
-			KodiDiagnostics.error("Impossibile avviare Kodi per la riproduzione", e);
+			setKodiError("Impossibile avviare Kodi per la riproduzione: " + e.getMessage());
 			return;
 		}
 		new Thread(() -> {
@@ -601,7 +617,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				}
 			}
 			try {
-				if (client == null || lastError != null) throw lastError;
+				if (client == null || lastError != null) {
+					if (lastError != null) throw lastError;
+					throw new IllegalStateException("Kodi non ha risposto al JSON-RPC");
+				}
 				if (KodiMediaItem.MOVIE.equals(type)) client.openMovie(kodiId);
 				else if (KodiMediaItem.EPISODE.equals(type)) client.openEpisode(kodiId);
 				else throw new IllegalArgumentException("Tipo contenuto Kodi non supportato: " + type);
@@ -632,7 +651,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 					}
 					return;
 				}
-				int playerId = players.optJSONObject(0).optInt("playerid", -1);
+				org.json.JSONObject activePlayer = players.optJSONObject(0);
+				if (activePlayer == null) return;
+				int playerId = activePlayer.optInt("playerid", -1);
 				if (playerId < 0) return;
 				if ("stop".equals(action)) client.stopPlayer(playerId);
 				else client.playPause(playerId, action);
