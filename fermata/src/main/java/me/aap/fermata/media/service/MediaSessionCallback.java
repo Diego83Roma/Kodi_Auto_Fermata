@@ -535,8 +535,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			Exception lastError = null;
 			for (int attempt = 0; attempt < 20; attempt++) {
 				try {
-					client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
-							KodiJsonRpcClient.DEFAULT_PORT, null, null);
+					client = KodiSettings.createClient(service);
 					client.getApiVersion();
 					lastError = null;
 					break;
@@ -586,8 +585,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			Exception lastError = null;
 			for (int attempt = 0; attempt < 20; attempt++) {
 				try {
-					client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
-							KodiJsonRpcClient.DEFAULT_PORT, null, null);
+					client = KodiSettings.createClient(service);
 					client.getApiVersion();
 					lastError = null;
 					break;
