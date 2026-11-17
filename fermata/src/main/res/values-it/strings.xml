@@ -383,7 +383,7 @@
     <string name="kodi_backend">Kodi</string>
     <string name="kodi_connection_settings">Configura collegamento</string>
     <string name="kodi_connection_settings_sub">Imposta nome utente e password per Kodi su questo dispositivo</string>
-    <string name="kodi_connection_local_info">Collegamento locale: 127.0.0.1:8080. Lascia vuoti i campi se l'autenticazione HTTP di Kodi è disattivata.</string>
+    <string name="kodi_connection_local_info">Collegamento locale: 127.0.0.1:8080. Lascia vuoti i campi se l\'autenticazione HTTP di Kodi è disattivata.</string>
     <string name="kodi_username">Nome utente Kodi</string>
     <string name="kodi_password">Password Kodi</string>
     <string name="kodi_settings_saved">Impostazioni di collegamento Kodi salvate</string>
