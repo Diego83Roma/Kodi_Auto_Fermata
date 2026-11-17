@@ -25,6 +25,13 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
+### Build 73 – menu Kodi moderno con azioni visibili
+- Versione `2.0.2-Kodi-0.1.23`, code `292`.
+- Corretto il menu **Impostazioni > Kodi** della schermata moderna: la Build 72 combinava `AlertDialog.setMessage()` e `setItems()`; sul dispositivo dell'utente appariva soltanto il messaggio e non le tre azioni.
+- Sostituito l'elenco del dialogo con una vista personalizzata contenente tre pulsanti espliciti: **Credenziali Kodi**, **Verifica collegamento** e **Log diagnosi**.
+- Le tre azioni richiamano i metodi già esistenti in `HomeActivity`; nessuna modifica all'albero o all'ordine Android Auto.
+- Esito GitHub Actions: in attesa; non installare finché la build non è verde. Restano da verificare sul telefono la visibilità e l'apertura delle tre azioni.
+
 ### Build 72 – credenziali nella schermata moderna
 - Versione `2.0.2-Kodi-0.1.22`, code `291`.
 - Corretto il punto di inserimento: il pulsante **Credenziali Kodi** è ora nella schermata moderna **Impostazioni > Kodi** di `HomeActivity`, nello stesso elenco di **Verifica collegamento** e **Log diagnosi**.

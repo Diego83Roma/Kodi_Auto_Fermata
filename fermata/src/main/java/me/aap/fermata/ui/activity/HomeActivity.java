@@ -251,18 +251,48 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showKodiSettings() {
-        String[] actions = {"Credenziali Kodi", "Verifica collegamento", "Log diagnosi"};
-        new AlertDialog.Builder(this).setTitle("Kodi")
-                .setMessage("Gestisci l'accesso al servizio locale Kodi (127.0.0.1:8080).")
-                .setItems(actions, (dialog, which) -> {
-                    switch (which) {
-                        case 0: showKodiCredentials(); break;
-                        case 1: testKodiConnection(); break;
-                        case 2: showKodiDiagnostics(); break;
-                    }
-                })
+        LinearLayout menu = createKodiSettingsMenu();
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Kodi")
+                .setView(menu)
                 .setNegativeButton("Chiudi", null)
-                .show();
+                .create();
+        menu.setTag(dialog);
+        dialog.show();
+    }
+
+    private LinearLayout createKodiSettingsMenu() {
+        LinearLayout menu = new LinearLayout(this);
+        menu.setOrientation(LinearLayout.VERTICAL);
+        int padding = dp(20);
+        menu.setPadding(padding, dp(8), padding, dp(8));
+
+        TextView description = text(
+                "Gestisci l'accesso al servizio locale Kodi (127.0.0.1:8080).",
+                14, Color.rgb(174, 188, 208), false);
+        LinearLayout.LayoutParams descriptionLp = lp(-1, -2);
+        descriptionLp.bottomMargin = dp(12);
+        menu.addView(description, descriptionLp);
+
+        Button credentials = button("Credenziali Kodi", () -> {
+            ((android.app.Dialog) menu.getTag()).dismiss();
+            showKodiCredentials();
+        });
+        Button connection = button("Verifica collegamento", () -> {
+            ((android.app.Dialog) menu.getTag()).dismiss();
+            testKodiConnection();
+        });
+        Button diagnostics = button("Log diagnosi", () -> {
+            ((android.app.Dialog) menu.getTag()).dismiss();
+            showKodiDiagnostics();
+        });
+
+        for (Button action : new Button[]{credentials, connection, diagnostics}) {
+            LinearLayout.LayoutParams actionLp = lp(-1, -2);
+            actionLp.bottomMargin = dp(8);
+            menu.addView(action, actionLp);
+        }
+        return menu;
     }
 
     private void showKodiCredentials() {
