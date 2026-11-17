@@ -615,7 +615,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}, "Kodi-Connection-Check").start();
 	}
 
-	private void playKodiMediaItem(String mediaId) {
+	private void openKodiExternalItem(String mediaId) {
+        new Thread(() -> {
+            try {
+                KodiJsonRpcClient client = null; Exception error = null;
+                for (int i=0;i<20;i++) {
+                    try { client=KodiSettings.createClient(service); client.getApiVersion(); error=null; break; }
+                    catch(Exception e) { error=e; Thread.sleep(750); }
+                }
+                if(client==null || error!=null) throw (error==null ? new IllegalStateException("Kodi non risponde") : error);
+                client.openExternal(KodiExternalItem.getPayload(mediaId));
+            } catch(Exception e) { KodiDiagnostics.error("Apertura elemento Kodi non riuscita",e); }
+        },"Kodi-External-Open").start();
+    }
+    private void playKodiMediaItem(String mediaId) {
 		String type = KodiMediaItem.getType(mediaId);
 		int kodiId = KodiMediaItem.getKodiId(mediaId);
 		if (kodiId < 0) return;
@@ -703,7 +716,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (KodiMediaItem.isId(kodiShortcutMediaId) && !mediaId.equals(kodiShortcutMediaId)) {
 			controlKodiPlayer("stop");
 		}
-		if (KodiActionItem.isId(mediaId)) {
+		if (KodiExternalItem.isId(mediaId)) {
+            return onStop(false).then(v -> {
+                kodiShortcutMediaId=mediaId; session.setActive(true);
+                setMetadata(new MediaMetadataCompat.Builder()
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID,mediaId)
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE,"Apri elemento Kodi")
+                        .putString(METADATA_KEY_DISPLAY_TITLE,"Apri elemento Kodi").build());
+                setPlaybackState(new PlaybackStateCompat.Builder().setActions(ACTION_PLAY|ACTION_STOP)
+                        .setState(STATE_CONNECTING,0,0f).build());
+                openKodiExternalItem(mediaId); return completedVoid();
+            });
+        }
+        if (KodiActionItem.isId(mediaId)) {
 			String target = KodiActionItem.getTarget(mediaId);
 			return (target == null) ? completedVoid() : playFromMediaId(target, extras);
 		}

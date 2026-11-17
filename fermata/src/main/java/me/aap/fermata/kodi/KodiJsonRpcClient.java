@@ -204,6 +204,41 @@ public final class KodiJsonRpcClient {
         return call("VideoLibrary.GetEpisodes", params).optJSONArray("episodes");
     }
 
+    public JSONArray getFavorites() throws IOException, JSONException {
+        return call("Favourites.GetFavourites", new JSONObject()).optJSONArray("favourites");
+    }
+    public JSONArray getTvChannels() throws IOException, JSONException {
+        JSONArray groups=call("PVR.GetChannelGroups",new JSONObject().put("channeltype","tv")).optJSONArray("channelgroups");
+        if(groups==null||groups.length()==0)return new JSONArray();
+        int id=groups.optJSONObject(0).optInt("channelgroupid",-1); if(id<0)return new JSONArray();
+        JSONObject p=new JSONObject().put("channelgroupid",id).put("properties",
+                new JSONArray().put("channel").put("channelid").put("channelnumber").put("thumbnail"));
+        return call("PVR.GetChannels",p).optJSONArray("channels");
+    }
+    public JSONArray getVideoPlaylists() throws IOException, JSONException {
+        JSONObject p=new JSONObject().put("directory","special://videoplaylists/").put("media","files")
+                .put("properties",new JSONArray().put("title").put("file"));
+        return call("Files.GetDirectory",p).optJSONArray("files");
+    }
+    public JSONObject openExternal(JSONObject item) throws IOException, JSONException {
+        String kind=item.optString("kind","");
+        if("channel".equals(kind)) return call("Player.Open",new JSONObject().put("item",
+                new JSONObject().put("channelid",item.getInt("channelid"))));
+        if("playlist".equals(kind)) return activateWindow("videos",item.optString("file"));
+        if("favorite".equals(kind)) {
+            String type=item.optString("type","");
+            if("media".equals(type)) return call("Player.Open",new JSONObject().put("item",
+                    new JSONObject().put("file",item.getString("path"))));
+            if("window".equals(type)) {
+                JSONObject p=new JSONObject().put("window",item.getString("window"));
+                String parameter=item.optString("windowparameter","");
+                if(!parameter.isEmpty())p.put("parameters",new JSONArray().put(parameter));
+                return call("GUI.ActivateWindow",p);
+            }
+            throw new IOException("Tipo preferito Kodi non supportato: "+type);
+        }
+        throw new IOException("Elemento Kodi non riconosciuto");
+    }
     public JSONArray getAddons() throws IOException, JSONException {
         JSONObject params = new JSONObject();
         params.put("properties", new JSONArray().put("name").put("version")

@@ -31,6 +31,12 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
+### Browsing Kodi – TV, Preferiti e Playlist
+- TV in diretta carica i canali del primo gruppo PVR TV restituito da Kodi; la selezione invia `Player.Open` con `channelid`.
+- Preferiti carica le voci tramite `Favourites.GetFavourites`; apre i preferiti di tipo media o window.
+- Playlist carica i file di `special://videoplaylists/` tramite `Files.GetDirectory`; la selezione apre la playlist in Kodi.
+- Film e Serie TV, ordine Android Auto e player Fermata restano invariati. Verifica runtime ancora da effettuare con PVR, preferiti e playlist presenti in Kodi.
+
 ### Build APK #138 – base stabile verificata
 - Versione `2.0.2-Kodi-0.1.23`, code `292`.
 - Corretto il menu **Impostazioni > Kodi** della schermata moderna: la Build 72 combinava `AlertDialog.setMessage()` e `setItems()`; sul dispositivo dell'utente appariva soltanto il messaggio e non le tre azioni.
