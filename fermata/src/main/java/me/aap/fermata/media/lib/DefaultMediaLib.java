@@ -167,10 +167,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		result.detach();
 
 		if (getRootId().equals(parentMediaId)) {
-			List<MediaItem> items = new ArrayList<>(10);
-			// Keep a single Kodi entry point; its library categories are browsable below.
-			getKodiFolderForShortcuts().asMediaItem().onSuccess(items::add)
-					.then(v -> getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem()))
+			List<MediaItem> items = new ArrayList<>(5);
+			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
 					.onSuccess(i -> {
 						if (i != null) items.add(i);
 					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
@@ -179,11 +177,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
 							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
 									a -> a.getRootItem(this))))
+					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
 					.onCompletion((r, err) -> {
 						if (err != null) Log.e(err);
 						result.sendResult(items, null);
 					});
-
 		} else {
 			getItem(parentMediaId).then(i -> {
 				if (i instanceof BrowsableItem) {
