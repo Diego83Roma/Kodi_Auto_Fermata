@@ -464,7 +464,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlay() {
 		if (kodiShortcutMediaId != null) {
-			if (KodiMediaItem.isId(kodiShortcutMediaId)) playKodiMediaItem(kodiShortcutMediaId);
+			if (KodiMediaItem.isId(kodiShortcutMediaId)) controlKodiPlayer("play");
 			else openKodiShortcut(kodiShortcutMediaId);
 			return;
 		}
@@ -607,8 +607,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				else throw new IllegalArgumentException("Tipo contenuto Kodi non supportato: " + type);
 				KodiDiagnostics.info("Player.Open inviato a Kodi per " + mediaId);
 				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
-						.setActions(ACTION_PLAY | ACTION_STOP)
-						.setState(STATE_PAUSED, 0, 0f).build()));
+						.setActions(ACTION_PAUSE | ACTION_STOP)
+						.setState(STATE_PLAYING, 0, 1f).build()));
 			} catch (Exception e) {
 				KodiDiagnostics.error("Avvio contenuto Kodi non riuscito", e);
 				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
@@ -618,7 +618,34 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}, "Kodi-Player-Open").start();
 	}
 
+	private void controlKodiPlayer(String action) {
+		new Thread(() -> {
+			try {
+				KodiJsonRpcClient client = KodiSettings.createClient(service);
+				org.json.JSONArray players = client.getActivePlayers();
+				if (players == null || players.length() == 0) {
+					if ("play".equals(action) && KodiMediaItem.isId(kodiShortcutMediaId)) {
+						String type = KodiMediaItem.getType(kodiShortcutMediaId);
+						int id = KodiMediaItem.getKodiId(kodiShortcutMediaId);
+						if (KodiMediaItem.MOVIE.equals(type)) client.openMovie(id);
+						else if (KodiMediaItem.EPISODE.equals(type)) client.openEpisode(id);
+					}
+					return;
+				}
+				int playerId = players.optJSONObject(0).optInt("playerid", -1);
+				if (playerId < 0) return;
+				if ("stop".equals(action)) client.stopPlayer(playerId);
+				else client.playPause(playerId, action);
+			} catch (Exception e) {
+				KodiDiagnostics.error("Controllo riproduzione Kodi non riuscito: " + action, e);
+			}
+		}, "Kodi-Playback-Control").start();
+	}
+
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
+		if (KodiMediaItem.isId(kodiShortcutMediaId) && !mediaId.equals(kodiShortcutMediaId)) {
+			controlKodiPlayer("stop");
+		}
 		if (KodiActionItem.isId(mediaId)) {
 			String target = KodiActionItem.getTarget(mediaId);
 			return (target == null) ? completedVoid() : playFromMediaId(target, extras);
@@ -702,6 +729,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPause() {
+		if (KodiMediaItem.isId(kodiShortcutMediaId)) {
+			controlKodiPlayer("pause");
+			setPlaybackState(new PlaybackStateCompat.Builder()
+					.setActions(ACTION_PLAY | ACTION_STOP)
+					.setState(STATE_PAUSED, 0, 0f).build());
+			return;
+		}
 		if (kodiShortcutMediaId != null) return;
 		PlayableItem i;
 		MediaEngine eng = getEngine();
@@ -725,6 +759,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onStop() {
 		if (kodiShortcutMediaId != null) {
+			if (KodiMediaItem.isId(kodiShortcutMediaId)) controlKodiPlayer("stop");
 			kodiShortcutMediaId = null;
 			setMetadata(null);
 			onStop(false);
