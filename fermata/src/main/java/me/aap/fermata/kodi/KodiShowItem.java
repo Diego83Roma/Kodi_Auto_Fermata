@@ -51,8 +51,7 @@ public final class KodiShowItem extends BrowsableItemBase {
         new Thread(() -> {
             List<Item> items = new ArrayList<>();
             try {
-                KodiJsonRpcClient client = new KodiJsonRpcClient(
-                        KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT, null, null);
+                KodiJsonRpcClient client = KodiSettings.createClient(getLib().getContext());
                 JSONArray episodes = client.getEpisodes(tvShowId, 0, 500);
                 if (episodes != null) {
                     for (int i = 0; i < episodes.length(); i++) {
