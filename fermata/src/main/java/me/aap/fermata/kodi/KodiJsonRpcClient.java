@@ -159,6 +159,20 @@ public final class KodiJsonRpcClient {
         return call("VideoLibrary.GetMovies", params).optJSONArray("movies");
     }
 
+    public JSONArray getActivePlayers() throws IOException, JSONException {
+        return call("Player.GetActivePlayers", null).optJSONArray("value");
+    }
+
+    public JSONObject playPause(int playerId, String play)
+            throws IOException, JSONException {
+        return call("Player.PlayPause", new JSONObject().put("playerid", playerId)
+                .put("play", play));
+    }
+
+    public JSONObject stopPlayer(int playerId) throws IOException, JSONException {
+        return call("Player.Stop", new JSONObject().put("playerid", playerId));
+    }
+
     public JSONObject openMovie(int movieId) throws IOException, JSONException {
         return call("Player.Open", new JSONObject().put("item",
                 new JSONObject().put("movieid", movieId)));
