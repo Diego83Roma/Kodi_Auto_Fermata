@@ -32,6 +32,7 @@ public final class KodiActionItem extends PlayableItemBase {
             case "tv" -> KodiShortcutItem.TV;
             case "favorites" -> KodiShortcutItem.FAVORITES;
             case "playlists" -> KodiShortcutItem.PLAYLISTS;
+            case "connection" -> KodiShortcutItem.CONNECTION;
             default -> null;
         };
     }
