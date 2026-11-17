@@ -5,6 +5,12 @@
 
 Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fermata. Il ramo `main` e il ramo `fermata-kodi-auto-clean` non fanno parte delle modifiche correnti.
 
+### Base di lavoro confermata
+- Base: **Build APK #138**, versione `2.0.2-Kodi-0.1.23`, versionCode `292`.
+- Commit di riferimento: `f7b00032ca60d1b2276b372638ccfe24bf0de36c`.
+- Ramo operativo: `kodi-backend-prototype`.
+- L'utente ha confermato il funzionamento sul dispositivo. Le prossime attività devono partire da questo stato, senza ripristinare vecchi tentativi o modificare `main` e `fermata-kodi-auto-clean`.
+
 ### Obiettivo e vincoli
 - Mantenere l'interfaccia moderna già presente in Fermata.
 - Fermata resta l'interfaccia/player Android Auto; Kodi resta un'app separata sullo stesso telefono.
@@ -25,12 +31,14 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
-### Build 73 – menu Kodi moderno con azioni visibili
+### Build APK #138 – base stabile verificata
 - Versione `2.0.2-Kodi-0.1.23`, code `292`.
 - Corretto il menu **Impostazioni > Kodi** della schermata moderna: la Build 72 combinava `AlertDialog.setMessage()` e `setItems()`; sul dispositivo dell'utente appariva soltanto il messaggio e non le tre azioni.
 - Sostituito l'elenco del dialogo con una vista personalizzata contenente tre pulsanti espliciti: **Credenziali Kodi**, **Verifica collegamento** e **Log diagnosi**.
 - Le tre azioni richiamano i metodi già esistenti in `HomeActivity`; nessuna modifica all'albero o all'ordine Android Auto.
-- Esito GitHub Actions: in attesa; non installare finché la build non è verde. Restano da verificare sul telefono la visibilità e l'apertura delle tre azioni.
+- GitHub Actions: **completata con successo** ([Build APK #138](https://github.com/Diego83Roma/Kodi_Auto_Fermata/actions/runs/44158711367)).
+- Verifica sul dispositivo confermata dall'utente: la schermata **Impostazioni > Kodi** mostra correttamente le azioni e ora funziona.
+- Questa è la **base di partenza stabile** per gli sviluppi successivi. Mantenere invariati i comportamenti già verificati; introdurre le prossime modifiche in modo incrementale e controllato.
 
 ### Build 72 – credenziali nella schermata moderna
 - Versione `2.0.2-Kodi-0.1.22`, code `291`.
