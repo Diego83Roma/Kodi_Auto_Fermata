@@ -70,8 +70,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
@@ -90,7 +88,6 @@ import android.text.TextUtils;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.annotation.Nullable;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.AudioFocusRequestCompat;
@@ -108,7 +105,6 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.kodi.KodiJsonRpcClient;
 import me.aap.fermata.kodi.KodiDiagnostics;
 import me.aap.fermata.kodi.KodiShortcutItem;
-import me.aap.fermata.kodi.KodiMediaItem;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -465,11 +461,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlay() {
 		if (kodiShortcutMediaId != null) {
-			KodiDiagnostics.info("Comando Play ricevuto da Android Auto per " + kodiShortcutMediaId);
-			setPlaybackState(new PlaybackStateCompat.Builder()
-						.setActions(ACTION_PLAY | ACTION_STOP)
-						.setState(STATE_CONNECTING, 0, 0f)
-						.build());
 			openKodiShortcut(kodiShortcutMediaId);
 			return;
 		}
@@ -518,87 +509,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = playFromMediaId(mediaId, extras);
 	}
 
-	private void playKodiMediaItem(String mediaId) {
-		String type = KodiMediaItem.getType(mediaId);
-		int kodiId = KodiMediaItem.getKodiId(mediaId);
-		if (kodiId < 0 || (!KodiMediaItem.MOVIE.equals(type)
-				&& !KodiMediaItem.EPISODE.equals(type))) return;
-
-		android.content.Intent launchIntent =
-				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
-		if (launchIntent == null) {
-			KodiDiagnostics.error("Kodi non risulta installato: impossibile riprodurre " + mediaId, null);
-			return;
-		}
-		launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-				| android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-		try {
-			service.startActivity(launchIntent);
-		} catch (Exception e) {
-			KodiDiagnostics.error("Impossibile avviare Kodi per la riproduzione", e);
-			return;
-		}
-
-		setMetadata(new MediaMetadataCompat.Builder()
-				.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
-				.putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Riproduzione Kodi")
-				.putString(METADATA_KEY_DISPLAY_TITLE, "Riproduzione Kodi")
-				.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createKodiShortcutArtwork())
-				.build());
-		setPlaybackState(new PlaybackStateCompat.Builder()
-				.setActions(ACTION_STOP)
-				.setState(STATE_CONNECTING, 0, 0f).build());
-
-		new Thread(() -> {
-			KodiJsonRpcClient client = null;
-			Exception lastError = null;
-			for (int attempt = 0; attempt < 20; attempt++) {
-				try {
-					client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
-							KodiJsonRpcClient.DEFAULT_PORT, null, null);
-					client.getApiVersion();
-					lastError = null;
-					break;
-				} catch (Exception e) {
-					lastError = e;
-					try {
-						Thread.sleep(750);
-					} catch (InterruptedException interrupted) {
-						Thread.currentThread().interrupt();
-						return;
-					}
-				}
-			}
-			try {
-				if (client == null || lastError != null) throw lastError;
-				if (KodiMediaItem.MOVIE.equals(type)) client.openMovie(kodiId);
-				else client.openEpisode(kodiId);
-				KodiDiagnostics.info("Comando Player.Open inviato a Kodi per " + mediaId);
-				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
-						.setActions(ACTION_STOP)
-						.setState(STATE_PAUSED, 0, 0f).build()));
-			} catch (Exception e) {
-				KodiDiagnostics.error("Avvio contenuto Kodi non riuscito", e);
-				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
-						.setActions(ACTION_PLAY | ACTION_STOP)
-						.setState(STATE_ERROR, 0, 0f).build()));
-			}
-		}, "Kodi-Player-Open").start();
-	}
-
-	private Bitmap createKodiShortcutArtwork() {
-		final int size = 256;
-		Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-		Canvas canvas = new Canvas(bitmap);
-		Drawable icon = AppCompatResources.getDrawable(service, R.drawable.video);
-		if (icon != null) {
-			int inset = 28;
-			icon.setBounds(inset, inset, size - inset, size - inset);
-			icon.draw(canvas);
-		}
-		return bitmap;
-	}
-
 	private void openKodiShortcut(String mediaId) {
 		String window = KodiShortcutItem.getWindow(mediaId);
 		String path = KodiShortcutItem.getPath(mediaId);
@@ -644,14 +554,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			try {
 				client.activateWindow(window, path);
 				KodiDiagnostics.info("Aperta sezione Kodi da Android Auto: " + mediaId);
-				handler.post(() -> {
-					if (mediaId.equals(kodiShortcutMediaId)) {
-						setPlaybackState(new PlaybackStateCompat.Builder()
-								.setActions(ACTION_PLAY | ACTION_STOP)
-								.setState(STATE_PAUSED, 0, 0f)
-								.build());
-					}
-				});
 			} catch (Exception e) {
 				KodiDiagnostics.error("Navigazione Kodi da Android Auto non riuscita", e);
 			}
@@ -659,12 +561,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
-		if (KodiShortcutItem.isKodiPlayableId(mediaId)) {
-			return onStop(false).then(v -> {
-				playKodiMediaItem(mediaId);
-				return completedVoid();
-			});
-		}
 		if (KodiShortcutItem.isKodiShortcutId(mediaId)) {
 			return onStop(false).then(v -> {
 				kodiShortcutMediaId = mediaId;
@@ -674,8 +570,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
 						.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
 						.putString(METADATA_KEY_DISPLAY_TITLE, title)
-						.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createKodiShortcutArtwork())
-						.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, createKodiShortcutArtwork())
 						.build());
 				PlaybackStateCompat state = new PlaybackStateCompat.Builder()
 						.setActions(ACTION_PLAY | ACTION_STOP)
