@@ -25,6 +25,14 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
+### Build 66 – verifica collegamento da Android Auto (in compilazione)
+- Versione `2.0.2-Kodi-0.1.16`, code `285`.
+- Aggiunta in **Cartella Kodi** la voce **Collegamento Kodi**, con l'azione **Verifica collegamento Kodi**.
+- L'azione interroga `JSONRPC.Version` sull'endpoint locale configurato e mostra lo stato di connessione nella sessione multimediale Android Auto; in caso di errore registra la diagnosi e restituisce uno stato di errore.
+- Non è stata aggiunta una maschera per username/password nell'auto: le credenziali restano configurabili dall'app sul telefono, come concordato per i limiti dell'interfaccia MediaBrowser.
+- TV in diretta, Preferiti e Playlist continuano in questa build a usare i collegamenti alla sezione nativa Kodi; il caricamento delle rispettive liste reali è il passo successivo.
+- Compilazione GitHub Actions e prova su dispositivo ancora da verificare.
+
 ### Compilazione e verifica
 - Build 56 (`2.0.2-Kodi-0.1.7`, code `276`): verificata dall'utente sul dispositivo; tutti e cinque i collegamenti della schermata moderna aprono correttamente le rispettive sezioni Kodi.
 - Build 42: **fallita** durante la compilazione per una doppia assegnazione potenziale in `HomeActivity.java`.
