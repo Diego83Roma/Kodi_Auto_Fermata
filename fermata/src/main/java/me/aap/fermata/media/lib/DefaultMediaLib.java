@@ -168,11 +168,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 		if (getRootId().equals(parentMediaId)) {
 			List<MediaItem> items = new ArrayList<>(10);
-			// Keep the most-used Kodi destinations and folder directly on the root screen.
-			getItem(KodiShortcutItem.TV).then(i -> i.asMediaItem()).onSuccess(items::add)
-					.then(v -> getItem(KodiShortcutItem.PLAYLISTS).then(i -> i.asMediaItem()))
-					.onSuccess(items::add)
-					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
+			// Keep a single Kodi entry point; its library categories are browsable below.
+			getKodiFolderForShortcuts().asMediaItem().onSuccess(items::add)
 					.then(v -> getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem()))
 					.onSuccess(i -> {
 						if (i != null) items.add(i);
