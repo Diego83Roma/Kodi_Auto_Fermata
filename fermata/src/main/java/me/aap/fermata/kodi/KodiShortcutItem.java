@@ -29,6 +29,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
     public static final String TV_SHOWS = "kodi:tvshows";
     public static final String FAVORITES = "kodi:favorites";
     public static final String PLAYLISTS = "kodi:playlists";
+    public static final String CONNECTION = "kodi:connection";
 
     private final String title;
 
@@ -97,6 +98,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
             case TV_SHOWS -> "Telefilm Kodi";
             case FAVORITES -> "Preferiti Kodi";
             case PLAYLISTS -> "Playlist Kodi";
+            case CONNECTION -> "Collegamento Kodi";
             default -> null;
         };
     }
@@ -106,6 +108,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
             case TV -> "Apri TV in diretta in Kodi";
             case FAVORITES -> "Apri Preferiti in Kodi";
             case PLAYLISTS -> "Apri Playlist in Kodi";
+            case CONNECTION -> "Verifica collegamento Kodi";
             default -> "Apri in Kodi";
         };
     }
@@ -143,7 +146,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
                         }
                     }
                 } else if (TV.equals(getId()) || FAVORITES.equals(getId())
-                        || PLAYLISTS.equals(getId())) {
+                        || PLAYLISTS.equals(getId()) || CONNECTION.equals(getId())) {
                     items.add(new KodiActionItem(this, getId(), actionTitle(getId())));
                 }
                 KodiDiagnostics.info("Voci Kodi caricate per " + getId() + ": " + items.size());
