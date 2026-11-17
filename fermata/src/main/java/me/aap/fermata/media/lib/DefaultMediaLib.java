@@ -167,16 +167,29 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		result.detach();
 
 		if (getRootId().equals(parentMediaId)) {
-			List<MediaItem> items = new ArrayList<>(5);
-			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
-					.onSuccess(i -> {
-						if (i != null) items.add(i);
-					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
+			List<MediaItem> items = new ArrayList<>(10);
+			List<Item> addonItems = CollectionUtils.map(
+					AddonManager.get().getAddons(MediaLibAddon.class), a -> a.getRootItem(this));
+			Item tvItem = null;
+			for (Iterator<Item> it = addonItems.iterator(); it.hasNext();) {
+				Item item = it.next();
+				if ("TV".equals(item.getId())) {
+					tvItem = item;
+					it.remove();
+					break;
+				}
+			}
+			final Item tvRoot = tvItem;
+			(tvRoot == null ? completedVoid() : tvRoot.asMediaItem().onSuccess(items::add))
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
-					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
-							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
-									a -> a.getRootItem(this))))
+					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add), addonItems))
+					.then(v -> getFolders().asMediaItem()).onSuccess(items::add)
+					.then(v -> getLastPlayedItem().then(i ->
+							(i == null) ? completedNull() : i.asMediaItem()))
+					.onSuccess(i -> {
+						if (i != null) items.add(i);
+					})
 					.then(v -> getKodiFolderForShortcuts().asMediaItem()).onSuccess(items::add)
 					.onCompletion((r, err) -> {
 						if (err != null) Log.e(err);
