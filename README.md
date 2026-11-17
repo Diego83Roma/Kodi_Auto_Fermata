@@ -39,12 +39,20 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Build 60 (test grafico): versione `2.0.2-Kodi-0.1.11`, code `280`; ha provato i suggerimenti MediaBrowser a griglia. L'utente ha verificato che la differenza era minima.
 - Build 61 (test elenco verticale): versione `2.0.2-Kodi-0.1.12`, code `281`; ripristina i suggerimenti MediaBrowser a elenco verticale. Porta TV Kodi e Playlist Kodi direttamente al livello principale insieme a Cartella Kodi, prima delle categorie standard. Aggiunge artwork alla sessione virtuale Kodi e registra il comando Play Android Auto; dopo una risposta JSON-RPC positiva ripristina lo stato virtuale in pausa. Migliora la presentazione ma non simula una riproduzione reale: durata e avanzamento restano assenti finché Kodi non viene integrato come sorgente di playback.
 
-### Build 62 – browsing libreria Kodi (regressione riscontrata)
-- Versione `2.0.2-Kodi-0.1.13`, code `282`; compilazione completata, ma test utente negativo.
-- Le categorie erano state trasformate in nodi sfogliabili senza aver completato il ciclo Android Auto per gli elementi foglia: le selezioni non avviavano più i collegamenti Kodi.
-- L'inserimento di Cartella Kodi al primo posto della root alterava anche l'ordine delle voci originali.
-- La build correttiva 63 ripristina i cinque collegamenti selezionabili e l'ordine root precedente alla Build 62. La navigazione reale dei contenuti Kodi viene rimandata a una modifica separata, con elementi foglia implementati come veri media item.
+### Build 62 – regressione riscontrata
+- Versione `2.0.2-Kodi-0.1.13`, code `282`; test utente negativo: le selezioni non aprivano più i collegamenti Kodi e l'ordine della root era alterato.
+- La causa principale era il modello MediaBrowser: categorie e contenuti erano stati esposti con flag non coerenti e le azioni foglia non venivano instradate correttamente.
 
+### Build 65 – ripristino funzioni Kodi e configurazione connessione (in verifica)
+- Versione `2.0.2-Kodi-0.1.15`, code `284`.
+- Mantiene un solo ingresso **Cartella Kodi** dopo le prime tre voci Fermata; non aggiunge collegamenti Kodi duplicati alla root.
+- Tutte le cinque categorie originali sono presenti in **Cartella Kodi**: **TV in diretta**, **Film**, **Serie TV/Telefilm**, **Preferiti** e **Playlist**.
+- Le categorie sono nodi MediaBrowser `BROWSABLE`; film e serie caricano la libreria con `VideoLibrary.GetMovies` e `VideoLibrary.GetTVShows`, e gli episodi con `VideoLibrary.GetEpisodes`.
+- Film ed episodi sono elementi `PLAYABLE` e inviano `Player.Open` a Kodi. Play/Pausa/Stop della sessione Android Auto vengono inoltrati al player Kodi.
+- TV in diretta, Preferiti e Playlist mantengono l'apertura della sezione nativa corrispondente nell'app Kodi.
+- In **Impostazioni > Kodi** sono disponibili configurazione nome utente/password e verifica connessione. L'endpoint resta locale `127.0.0.1:8080`; la password viene cifrata con Android Keystore. Lasciare i campi vuoti se l'autenticazione HTTP di Kodi è disattivata.
+- Tutte le chiamate JSON-RPC usano le credenziali salvate.
+- Build e test sul dispositivo sono ancora da confermare; non considerare completata la verifica finché l'APK non è compilato e provato in auto.
 ### Build 63 – ripristino collegamenti Kodi (in compilazione)
 - Versione prevista: `2.0.2-Kodi-0.1.14`, code `283`.
 - Ripristinato il modello precedente delle cinque scorciatoie: TV in diretta, Film, Serie TV, Preferiti e Playlist.
