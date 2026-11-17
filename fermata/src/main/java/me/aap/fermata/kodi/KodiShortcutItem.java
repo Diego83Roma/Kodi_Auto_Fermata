@@ -130,8 +130,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
                         }
                     }
                 } else if (TV_SHOWS.equals(getId())) {
-                    KodiJsonRpcClient client = new KodiJsonRpcClient(
-                            KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT, null, null);
+                    KodiJsonRpcClient client = KodiSettings.createClient(getLib().getContext());
                     JSONArray shows = client.getTvShows(0, 500);
                     if (shows != null) {
                         for (int i = 0; i < shows.length(); i++) {
