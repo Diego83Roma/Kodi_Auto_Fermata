@@ -521,6 +521,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void openKodiShortcut(String mediaId) {
+		if (KodiShortcutItem.CONNECTION.equals(mediaId)) {
+			verifyKodiConnection();
+			return;
+		}
 		String window = KodiShortcutItem.getWindow(mediaId);
 		String path = KodiShortcutItem.getPath(mediaId);
 		if (window == null) {
@@ -577,6 +581,38 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						.setState(STATE_ERROR, 0, 0f).build()));
 			}
 		}, "Kodi-Android-Auto").start();
+	}
+
+	private void verifyKodiConnection() {
+		new Thread(() -> {
+			try {
+				KodiJsonRpcClient client = KodiSettings.createClient(service);
+				org.json.JSONObject version = client.getApiVersion();
+				String label = "Collegamento Kodi attivo";
+				Object versionValue = version.opt("version");
+				if (versionValue instanceof org.json.JSONObject) {
+					org.json.JSONObject v = (org.json.JSONObject) versionValue;
+					label += " (API " + v.optInt("major") + "." + v.optInt("minor") + ")";
+				}
+				KodiDiagnostics.info("Verifica collegamento Android Auto: OK");
+				final String status = label;
+				handler.post(() -> {
+					setMetadata(new MediaMetadataCompat.Builder()
+							.putString(MediaMetadataCompat.METADATA_KEY_TITLE, status)
+							.putString(METADATA_KEY_DISPLAY_TITLE, status).build());
+					setPlaybackState(new PlaybackStateCompat.Builder()
+							.setActions(ACTION_PLAY | ACTION_STOP)
+							.setState(STATE_PAUSED, 0, 0f).build());
+				});
+			} catch (Exception e) {
+				KodiDiagnostics.error("Verifica collegamento Android Auto non riuscita", e);
+				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_ERROR, 0, 0f)
+						.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR,
+								"Collegamento Kodi non riuscito: " + e.getMessage()).build()));
+			}
+		}, "Kodi-Connection-Check").start();
 	}
 
 	private void playKodiMediaItem(String mediaId) {
