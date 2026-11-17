@@ -117,8 +117,7 @@ public final class KodiShortcutItem extends BrowsableItemBase {
             List<Item> items = new ArrayList<>();
             try {
                 if (MOVIES.equals(getId())) {
-                    KodiJsonRpcClient client = new KodiJsonRpcClient(
-                            KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT, null, null);
+                    KodiJsonRpcClient client = KodiSettings.createClient(getLib().getContext());
                     JSONArray movies = client.getMovies(0, 500);
                     if (movies != null) {
                         for (int i = 0; i < movies.length(); i++) {
