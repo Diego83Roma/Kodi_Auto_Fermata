@@ -372,6 +372,8 @@
     <string name="media_projection_action_text">Start now</string>
 
     <string name="kodi_backend">Kodi</string>
+    <string name="kodi_credentials_shortcut">Enter Kodi username and password</string>
+    <string name="kodi_credentials_shortcut_sub">Open the fields to save Kodi credentials on this phone</string>
     <string name="kodi_test_connection">Verifica collegamento</string>
     <string name="kodi_test_connection_sub">Controlla Kodi su questo dispositivo (127.0.0.1:8080)</string>
     <string name="kodi_connection_ok">Collegamento riuscito. JSON-RPC Kodi %1$d.%2$d.%3$d</string>
