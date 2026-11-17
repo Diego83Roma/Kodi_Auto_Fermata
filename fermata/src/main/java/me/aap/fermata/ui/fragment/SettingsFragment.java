@@ -307,13 +307,14 @@ public class SettingsFragment extends MainActivityFragment
 		password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 		password.setHint(R.string.kodi_password);
 
+		username.setText(KodiSettings.getUsername(context));
 		try {
-			username.setText(KodiSettings.getUsername(context));
 			password.setText(KodiSettings.getPassword(context));
 		} catch (Exception e) {
-			UiUtils.showInfo(context, context.getString(R.string.kodi_connection_error,
-					String.valueOf(e.getMessage())));
-			return;
+			// If Android Keystore credentials cannot be decrypted (for example after
+			// a device restore), allow the user to replace them in this dialog.
+			password.setText("");
+			Log.w(e, "Saved Kodi password could not be decrypted; asking for it again");
 		}
 
 		LinearLayout fields = new LinearLayout(context);
