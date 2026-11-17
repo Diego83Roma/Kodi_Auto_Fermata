@@ -517,6 +517,74 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = playFromMediaId(mediaId, extras);
 	}
 
+	private void playKodiMediaItem(String mediaId) {
+		String type = KodiMediaItem.getType(mediaId);
+		int kodiId = KodiMediaItem.getKodiId(mediaId);
+		if (kodiId < 0 || (!KodiMediaItem.MOVIE.equals(type)
+				&& !KodiMediaItem.EPISODE.equals(type))) return;
+
+		android.content.Intent launchIntent =
+				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
+		if (launchIntent == null) {
+			KodiDiagnostics.error("Kodi non risulta installato: impossibile riprodurre " + mediaId, null);
+			return;
+		}
+		launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+				| android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		try {
+			service.startActivity(launchIntent);
+		} catch (Exception e) {
+			KodiDiagnostics.error("Impossibile avviare Kodi per la riproduzione", e);
+			return;
+		}
+
+		setMetadata(new MediaMetadataCompat.Builder()
+				.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
+				.putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Riproduzione Kodi")
+				.putString(METADATA_KEY_DISPLAY_TITLE, "Riproduzione Kodi")
+				.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createKodiShortcutArtwork())
+				.build());
+		setPlaybackState(new PlaybackStateCompat.Builder()
+				.setActions(ACTION_STOP)
+				.setState(STATE_CONNECTING, 0, 0f).build());
+
+		new Thread(() -> {
+			KodiJsonRpcClient client = null;
+			Exception lastError = null;
+			for (int attempt = 0; attempt < 20; attempt++) {
+				try {
+					client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
+							KodiJsonRpcClient.DEFAULT_PORT, null, null);
+					client.getApiVersion();
+					lastError = null;
+					break;
+				} catch (Exception e) {
+					lastError = e;
+					try {
+						Thread.sleep(750);
+					} catch (InterruptedException interrupted) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+				}
+			}
+			try {
+				if (client == null || lastError != null) throw lastError;
+				if (KodiMediaItem.MOVIE.equals(type)) client.openMovie(kodiId);
+				else client.openEpisode(kodiId);
+				KodiDiagnostics.info("Comando Player.Open inviato a Kodi per " + mediaId);
+				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_STOP)
+						.setState(STATE_PAUSED, 0, 0f).build()));
+			} catch (Exception e) {
+				KodiDiagnostics.error("Avvio contenuto Kodi non riuscito", e);
+				handler.post(() -> setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_ERROR, 0, 0f).build()));
+			}
+		}, "Kodi-Player-Open").start();
+	}
+
 	private Bitmap createKodiShortcutArtwork() {
 		final int size = 256;
 		Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
@@ -590,6 +658,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
+		if (KodiShortcutItem.isKodiPlayableId(mediaId)) {
+			return onStop(false).then(v -> {
+				playKodiMediaItem(mediaId);
+				return completedVoid();
+			});
+		}
 		if (KodiShortcutItem.isKodiShortcutId(mediaId)) {
 			return onStop(false).then(v -> {
 				kodiShortcutMediaId = mediaId;
