@@ -530,7 +530,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		android.content.Intent launchIntent =
 				service.getPackageManager().getLaunchIntentForPackage("org.xbmc.kodi");
 		if (launchIntent == null) {
-			Log.w("Kodi non risulta installato: impossibile aprire ", mediaId);
+			setKodiError("Kodi non risulta installato: impossibile aprire " + mediaId);
 			return;
 		}
 		launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -538,7 +538,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		try {
 			service.startActivity(launchIntent);
 		} catch (Exception e) {
-			Log.e(e, "Impossibile avviare Kodi da Android Auto");
+			setKodiError("Impossibile avviare Kodi da Android Auto: " + e.getMessage());
 			return;
 		}
 		new Thread(() -> {
