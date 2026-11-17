@@ -55,7 +55,7 @@ public class HomeActivity extends AppCompatActivity {
     private void showBlueDialog(AlertDialog dialog) {
         dialog.setOnShowListener(ignored -> {
             if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawable(shape(Color.rgb(24, 54, 83), 18));
-            TextView title = dialog.findViewById(android.R.id.alertTitle);
+            TextView title = dialog.findViewById(androidx.appcompat.R.id.alertTitle);
             if (title != null) title.setTextColor(Color.WHITE);
             TextView message = dialog.findViewById(android.R.id.message);
             if (message != null) message.setTextColor(Color.rgb(220, 232, 246));
@@ -347,7 +347,7 @@ public class HomeActivity extends AppCompatActivity {
                 .setMessage("Inserisci le credenziali HTTP di Kodi. Lascia vuoti entrambi i campi se l'autenticazione è disattivata.")
                 .setView(fields)
                 .setNegativeButton("Annulla", null)
-                .setPositiveButton("Salva", (dialog, which) -> {
+                .setPositiveButton("Salva", (clickedDialog, which) -> {
                     try {
                         KodiSettings.save(this, username.getText().toString(),
                                 password.getText().toString());
