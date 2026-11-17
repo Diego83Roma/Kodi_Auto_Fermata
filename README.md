@@ -39,12 +39,18 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Build 60 (test grafico): versione `2.0.2-Kodi-0.1.11`, code `280`; ha provato i suggerimenti MediaBrowser a griglia. L'utente ha verificato che la differenza era minima.
 - Build 61 (test elenco verticale): versione `2.0.2-Kodi-0.1.12`, code `281`; ripristina i suggerimenti MediaBrowser a elenco verticale. Porta TV Kodi e Playlist Kodi direttamente al livello principale insieme a Cartella Kodi, prima delle categorie standard. Aggiunge artwork alla sessione virtuale Kodi e registra il comando Play Android Auto; dopo una risposta JSON-RPC positiva ripristina lo stato virtuale in pausa. Migliora la presentazione ma non simula una riproduzione reale: durata e avanzamento restano assenti finché Kodi non viene integrato come sorgente di playback.
 
-### Build 62 – browsing libreria Kodi (in verifica)
-- Versione prevista: `2.0.2-Kodi-0.1.13`, code `282`.
-- Corretto il modello MediaBrowser: Film e Telefilm sono cartelle sfogliabili, non elementi riproducibili virtuali.
-- Aggiunti i modelli per film, serie ed episodi; la selezione di un film/episodio invia `Player.Open` al backend Kodi locale.
-- Rimossi TV Kodi e Playlist Kodi duplicati dalla root; resta un solo punto d'ingresso Cartella Kodi.
-- La compilazione e il test sul dispositivo non sono ancora confermati. Le categorie TV in diretta, Preferiti e Playlist sono temporaneamente escluse dalla Cartella Kodi e restano un lavoro successivo.
+### Build 62 – browsing libreria Kodi (regressione riscontrata)
+- Versione `2.0.2-Kodi-0.1.13`, code `282`; compilazione completata, ma test utente negativo.
+- Le categorie erano state trasformate in nodi sfogliabili senza aver completato il ciclo Android Auto per gli elementi foglia: le selezioni non avviavano più i collegamenti Kodi.
+- L'inserimento di Cartella Kodi al primo posto della root alterava anche l'ordine delle voci originali.
+- La build correttiva 63 ripristina i cinque collegamenti selezionabili e l'ordine root precedente alla Build 62. La navigazione reale dei contenuti Kodi viene rimandata a una modifica separata, con elementi foglia implementati come veri media item.
+
+### Build 63 – ripristino collegamenti Kodi (in compilazione)
+- Versione prevista: `2.0.2-Kodi-0.1.14`, code `283`.
+- Ripristinato il modello precedente delle cinque scorciatoie: TV in diretta, Film, Serie TV, Preferiti e Playlist.
+- Ripristinata la Cartella Kodi con tutte e cinque le voci.
+- Ripristinato l'ordine Android Auto precedente alla Build 62, con Cartella Kodi in fondo all'elenco invece che in testa.
+- La compilazione e la prova sul dispositivo sono ancora da verificare.
 
 ### Esito del test utente Build 59/60
 - Build 59: in Android Auto le voci risultavano 3 più Altro; TV e Playlist Kodi restavano in Altro. La selezione Kodi apriva la sezione sul telefono, ma Android Auto mostrava artwork grigio, posizione 0 e Play senza effetto percepibile.
