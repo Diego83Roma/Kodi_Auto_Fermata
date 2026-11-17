@@ -98,6 +98,7 @@ import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.BuiltinAddonItem;
 import me.aap.fermata.media.lib.ExportedItem;
 import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.IntentPlayable;
@@ -775,8 +776,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		} else if (root instanceof MediaLib.Playlists) {
 			showFragment(R.id.playlists_fragment);
 		} else if (root instanceof ExtRoot) {
-			if ("youtube".equals(root.getId())) {
+			if (BuiltinAddonItem.YOUTUBE.equals(root.getId())) {
 				showFragment(R.id.youtube_fragment);
+				return true;
+			} else if (BuiltinAddonItem.BROWSER.equals(root.getId())) {
+				showFragment(R.id.web_browser_fragment);
 				return true;
 			}
 		} else {

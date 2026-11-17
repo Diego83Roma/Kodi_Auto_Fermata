@@ -211,3 +211,11 @@ If you like the application, please consider making a donation:
 - La Build APK #141 si è fermata in compilazione Java per due errori in `HomeActivity.java`: ID del titolo del dialogo non risolto e nome del parametro lambda duplicato.
 - Corretti usando l'ID AppCompat del titolo e rinominando il parametro della callback Salva.
 - Le modifiche correttive sono state inviate sul ramo `kodi-backend-prototype`; la nuova compilazione GitHub Actions deve confermare il risultato prima di distribuire l'APK.
+
+
+### Build APK #144 – YouTube/Browser in Android Auto e collegamento Kodi in testa
+- Base di partenza: Build APK #143, sul branch `kodi-backend-prototype`.
+- Aggiunti **YouTube** e **Browser** come voci MediaBrowser nella sezione aggiuntiva di Android Auto (la cartella **Altro**), collegate rispettivamente alle schermate Fermata già presenti nella UI moderna.
+- Nella **Cartella Kodi**, spostata la voce **Collegamento Kodi** al primo posto, prima di TV, Film, Telefilm, Preferiti e Playlist, così da poter verificare la connessione prima di entrare nelle sezioni Kodi.
+- Nessuna modifica alle schermate moderne del telefono, all'ordine delle prime tre voci Android Auto o al player.
+- Compilazione e test Android Auto da verificare; la build verde conferma soltanto la compilazione, non il comportamento in auto.

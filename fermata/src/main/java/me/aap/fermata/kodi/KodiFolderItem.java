@@ -64,12 +64,12 @@ public final class KodiFolderItem extends BrowsableItemBase {
     @Override
     protected FutureSupplier<List<Item>> listChildren() {
         List<Item> items = new ArrayList<>(6);
+        items.add(new KodiShortcutItem(this, KodiShortcutItem.CONNECTION));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.TV));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.MOVIES));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.TV_SHOWS));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.FAVORITES));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.PLAYLISTS));
-        items.add(new KodiShortcutItem(this, KodiShortcutItem.CONNECTION));
         return completed(items);
     }
 

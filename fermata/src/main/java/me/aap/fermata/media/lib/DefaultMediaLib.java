@@ -117,6 +117,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case DefaultFavorites.ID -> completed(getFavorites());
 				case DefaultPlaylists.ID -> completed(getPlaylists());
 				case KodiFolderItem.ID -> completed(getKodiFolderForShortcuts());
+				case BuiltinAddonItem.YOUTUBE, BuiltinAddonItem.BROWSER -> completed(new BuiltinAddonItem(this, id));
 				default -> ifNull(AddonManager.get().getItem(this, null, id), completedNull());
 			};
 		}
@@ -170,6 +171,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			List<MediaItem> items = new ArrayList<>(10);
 			List<Item> addonItems = CollectionUtils.map(
 					AddonManager.get().getAddons(MediaLibAddon.class), a -> a.getRootItem(this));
+			addonItems.add(new BuiltinAddonItem(this, BuiltinAddonItem.YOUTUBE));
+			addonItems.add(new BuiltinAddonItem(this, BuiltinAddonItem.BROWSER));
 			Item tvItem = null;
 			for (Iterator<Item> it = addonItems.iterator(); it.hasNext();) {
 				Item item = it.next();
