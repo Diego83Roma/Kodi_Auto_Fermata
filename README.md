@@ -25,9 +25,16 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
-### Build 71 – credenziali nella sottosezione Kodi
+### Build 72 – credenziali nella schermata moderna
+- Versione `2.0.2-Kodi-0.1.22`, code `291`.
+- Corretto il punto di inserimento: il pulsante **Credenziali Kodi** è ora nella schermata moderna **Impostazioni > Kodi** di `HomeActivity`, nello stesso elenco di **Verifica collegamento** e **Log diagnosi**.
+- La Build 71 aveva modificato soltanto `SettingsFragment`, cioè il pannello impostazioni tradizionale di Fermata: per questo il comando non compariva nella schermata moderna usata dall'utente. La modifica precedente era quindi nel posto sbagliato.
+- La finestra moderna salva nome utente e password tramite `KodiSettings`; la password resta cifrata con Android Keystore. Anche il test e l'apertura delle sezioni Kodi usano ora le credenziali salvate.
+- Nessuna modifica all'albero o all'ordine delle voci Android Auto. Build Actions e prova sul telefono ancora da verificare.
+
+### Build 71 – tentativo nel pannello impostazioni tradizionale (posizione errata)
 - Versione `2.0.2-Kodi-0.1.21`, code `290`.
-- Spostato il pulsante **Credenziali Kodi** dalla pagina generale alla sottosezione **Impostazioni > Kodi**, insieme alle azioni di collegamento e diagnosi.
+- La modifica era stata inserita nella sottosezione Kodi di `SettingsFragment`, che non è la schermata moderna `HomeActivity`; il pulsante quindi non compariva nell'interfaccia moderna. Corretto nella Build 72.
 - Il pulsante apre la finestra già esistente con i campi **Nome utente Kodi** e **Password Kodi**; il salvataggio continua a usare `KodiSettings` e la cifratura Android Keystore.
 - Rimossi i riferimenti alle etichette del collegamento generale aggiunte per errore nella Build 69/70. Nessuna modifica alla schermata Android Auto o alle altre categorie.
 - Controlli statici e compilazione GitHub Actions da verificare; test sul telefono richiesto.

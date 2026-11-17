@@ -11,7 +11,9 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.text.InputType;
 import android.widget.ImageView;
 import android.widget.FrameLayout;
 import android.widget.ScrollView;
@@ -25,6 +27,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.kodi.KodiJsonRpcClient;
 import me.aap.fermata.kodi.KodiDiagnostics;
+import me.aap.fermata.kodi.KodiSettings;
 
 
 
@@ -168,8 +171,7 @@ public class HomeActivity extends AppCompatActivity {
             // harmless version probe, never GUI.ActivateWindow itself.
             for (int attempt = 0; attempt < 20; attempt++) {
                 try {
-                    client = new KodiJsonRpcClient(KodiJsonRpcClient.DEFAULT_HOST,
-                            KodiJsonRpcClient.DEFAULT_PORT, null, null);
+                    client = KodiSettings.createClient(this);
                     client.getApiVersion();
                     lastError = null;
                     break;
@@ -249,11 +251,63 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showKodiSettings() {
+        String[] actions = {"Credenziali Kodi", "Verifica collegamento", "Log diagnosi"};
         new AlertDialog.Builder(this).setTitle("Kodi")
-                .setMessage("Verifica il collegamento locale a Kodi (127.0.0.1:8080).")
-                .setPositiveButton("Verifica collegamento", (dialog, which) -> testKodiConnection())
-                .setNeutralButton("Log diagnosi", (dialog, which) -> showKodiDiagnostics())
-                .setNegativeButton("Chiudi", null).show();
+                .setMessage("Gestisci l'accesso al servizio locale Kodi (127.0.0.1:8080).")
+                .setItems(actions, (dialog, which) -> {
+                    switch (which) {
+                        case 0: showKodiCredentials(); break;
+                        case 1: testKodiConnection(); break;
+                        case 2: showKodiDiagnostics(); break;
+                    }
+                })
+                .setNegativeButton("Chiudi", null)
+                .show();
+    }
+
+    private void showKodiCredentials() {
+        EditText username = new EditText(this);
+        username.setSingleLine(true);
+        username.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
+        username.setHint("Nome utente Kodi");
+        username.setText(KodiSettings.getUsername(this));
+
+        EditText password = new EditText(this);
+        password.setSingleLine(true);
+        password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        password.setHint("Password Kodi");
+        try {
+            password.setText(KodiSettings.getPassword(this));
+        } catch (Exception e) {
+            password.setText("");
+            KodiDiagnostics.error("Password Kodi salvata non leggibile: inserire nuovamente le credenziali", e);
+        }
+
+        LinearLayout fields = new LinearLayout(this);
+        fields.setOrientation(LinearLayout.VERTICAL);
+        int padding = dp(20);
+        fields.setPadding(padding, dp(8), padding, 0);
+        fields.addView(username, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        fields.addView(password, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        new AlertDialog.Builder(this)
+                .setTitle("Credenziali Kodi")
+                .setMessage("Inserisci le credenziali HTTP di Kodi. Lascia vuoti entrambi i campi se l'autenticazione è disattivata.")
+                .setView(fields)
+                .setNegativeButton("Annulla", null)
+                .setPositiveButton("Salva", (dialog, which) -> {
+                    try {
+                        KodiSettings.save(this, username.getText().toString(),
+                                password.getText().toString());
+                        Toast.makeText(this, "Credenziali Kodi salvate", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Errore nel salvataggio: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                })
+                .show();
     }
 
     private void showKodiDiagnostics() {
@@ -287,9 +341,7 @@ public class HomeActivity extends AppCompatActivity {
             String resultMessage;
             boolean resultConnected;
             try {
-                org.json.JSONObject result = new KodiJsonRpcClient(
-                        KodiJsonRpcClient.DEFAULT_HOST, KodiJsonRpcClient.DEFAULT_PORT,
-                        null, null).getApiVersion();
+                org.json.JSONObject result = KodiSettings.createClient(this).getApiVersion();
                 org.json.JSONObject version = result.optJSONObject("version");
                 if (version == null) version = result;
                 resultMessage = "Collegamento riuscito. Kodi JSON-RPC "
