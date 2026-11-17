@@ -51,6 +51,7 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Ripristinata la Cartella Kodi con tutte e cinque le voci.
 - Ripristinato l'ordine Android Auto precedente alla Build 62, con Cartella Kodi in fondo all'elenco invece che in testa.
 - La compilazione e la prova sul dispositivo sono ancora da verificare.
+- Il ripristino è intenzionalmente separato dal successivo lavoro di browsing: prima si verifica il ritorno dei collegamenti storici in auto, poi si implementa la libreria Kodi senza cambiare contemporaneamente il modello delle scorciatoie.
 
 ### Esito del test utente Build 59/60
 - Build 59: in Android Auto le voci risultavano 3 più Altro; TV e Playlist Kodi restavano in Altro. La selezione Kodi apriva la sezione sul telefono, ma Android Auto mostrava artwork grigio, posizione 0 e Play senza effetto percepibile.
