@@ -103,6 +103,7 @@ import java.util.Queue;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.kodi.KodiJsonRpcClient;
+import me.aap.fermata.kodi.KodiSettings;
 import me.aap.fermata.kodi.KodiDiagnostics;
 import me.aap.fermata.kodi.KodiShortcutItem;
 import me.aap.fermata.kodi.KodiMediaItem;
