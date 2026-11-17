@@ -78,7 +78,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 			"android.media.browse.CONTENT_STYLE_PLAYABLE_HINT";
 	private static final String CONTENT_STYLE_BROWSABLE_HINT =
 			"android.media.browse.CONTENT_STYLE_BROWSABLE_HINT";
-	private static final int CONTENT_STYLE_GRID_ITEM_HINT_VALUE = 2;
+	private static final int CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1;
 	private static final String INTENT_PREV = "me.aap.fermata.action.prev";
 	private static final String INTENT_RW = "me.aap.fermata.action.rw";
 	private static final String INTENT_STOP = "me.aap.fermata.action.stop";
@@ -190,8 +190,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		Bundle extras = new Bundle();
 		extras.putBoolean(EXTRA_MEDIA_SEARCH_SUPPORTED, true);
 		extras.putBoolean(CONTENT_STYLE_SUPPORTED, true);
-		extras.putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_GRID_ITEM_HINT_VALUE);
-		extras.putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_GRID_ITEM_HINT_VALUE);
+		extras.putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_LIST_ITEM_HINT_VALUE);
+		extras.putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST_ITEM_HINT_VALUE);
 		return new BrowserRoot(getLib().getRootId(), extras);
 	}
 
