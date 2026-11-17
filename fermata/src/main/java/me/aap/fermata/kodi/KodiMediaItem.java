@@ -71,6 +71,11 @@ public final class KodiMediaItem extends PlayableItemBase {
     }
 
     @Override
+    public boolean isSeekable() {
+        return false;
+    }
+
+    @Override
     public boolean isVideo() {
         return true;
     }
