@@ -25,6 +25,14 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
+### Build 67 – credenziali Kodi nelle impostazioni Fermata Auto
+- Versione `2.0.2-Kodi-0.1.17`, code `286`.
+- La sezione **Impostazioni > Kodi** dell'app sul telefono espone **Credenziali Kodi**: apre i campi **Nome utente Kodi** e **Password Kodi**.
+- Il nome utente viene salvato nelle preferenze private; la password viene cifrata con una chiave AES/GCM conservata in Android Keystore. I campi vuoti rimuovono le credenziali salvate e sono adatti quando l'autenticazione HTTP di Kodi è disattivata.
+- La voce **Verifica collegamento** resta disponibile per controllare JSON-RPC dopo il salvataggio. Le credenziali non vengono mostrate né richieste sul display Android Auto.
+- Questa build non modifica l'ordine o le categorie della schermata Android Auto.
+- Compilazione GitHub Actions e prova su dispositivo da verificare.
+
 ### Build 66 – verifica collegamento da Android Auto (in compilazione)
 - Versione `2.0.2-Kodi-0.1.16`, code `285`.
 - Aggiunta in **Cartella Kodi** la voce **Collegamento Kodi**, con l'azione **Verifica collegamento Kodi**.
