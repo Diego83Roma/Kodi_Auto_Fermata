@@ -108,6 +108,7 @@ import me.aap.fermata.kodi.KodiDiagnostics;
 import me.aap.fermata.kodi.KodiShortcutItem;
 import me.aap.fermata.kodi.KodiMediaItem;
 import me.aap.fermata.kodi.KodiActionItem;
+import me.aap.fermata.kodi.KodiExternalItem;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;

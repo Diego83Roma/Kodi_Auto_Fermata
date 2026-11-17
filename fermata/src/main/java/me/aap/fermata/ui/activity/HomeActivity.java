@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -49,6 +50,21 @@ public class HomeActivity extends AppCompatActivity {
         d.setCornerRadius(radius * getResources().getDisplayMetrics().density);
         d.setStroke((int)(1 * getResources().getDisplayMetrics().density), Color.rgb(48, 64, 88));
         return d;
+    }
+
+    private void showBlueDialog(AlertDialog dialog) {
+        dialog.setOnShowListener(ignored -> {
+            if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawable(shape(Color.rgb(24, 54, 83), 18));
+            TextView title = dialog.findViewById(android.R.id.alertTitle);
+            if (title != null) title.setTextColor(Color.WHITE);
+            TextView message = dialog.findViewById(android.R.id.message);
+            if (message != null) message.setTextColor(Color.rgb(220, 232, 246));
+            for (int id : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL}) {
+                Button button = dialog.getButton(id);
+                if (button != null) button.setTextColor(Color.rgb(143, 205, 255));
+            }
+        });
+        dialog.show();
     }
 
     private TextView text(String value, int size, int color, boolean bold) {
@@ -214,8 +230,8 @@ public class HomeActivity extends AppCompatActivity {
 
     private void showSettings() {
         String[] sections = {"Interfaccia e dimensioni", "Adattamento automatico", "Riproduzione", "Kodi", "Informazioni"};
-        new AlertDialog.Builder(this).setTitle("Impostazioni Fermata Kodi Auto")
-                .setItems(sections, (dialog, which) -> {
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Impostazioni Fermata Kodi Auto")
+                .setItems(sections, (d, which) -> {
                     switch (which) {
                         case 0: showInterfaceSettings(); break;
                         case 1: showResizeInfo(); break;
@@ -223,31 +239,35 @@ public class HomeActivity extends AppCompatActivity {
                         case 3: showKodiSettings(); break;
                         default: showAbout(); break;
                     }
-                }).setNegativeButton("Chiudi", null).show();
+                }).setNegativeButton("Chiudi", null).create();
+        showBlueDialog(dialog);
     }
 
     private void showInterfaceSettings() {
         final String[] sizes = {"Compatta", "Normale", "Grande"};
         int current = getSharedPreferences("ui_settings", MODE_PRIVATE).getInt("scale", 1);
-        new AlertDialog.Builder(this).setTitle("Dimensione interfaccia")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Dimensione interfaccia")
                 .setSingleChoiceItems(sizes, current, (d, which) -> {
                     getSharedPreferences("ui_settings", MODE_PRIVATE).edit().putInt("scale", which).apply();
                     d.dismiss();
                     Toast.makeText(this, "Dimensione salvata. Si applica alla prossima apertura.", Toast.LENGTH_SHORT).show();
-                }).setNegativeButton("Annulla", null).show();
+                }).setNegativeButton("Annulla", null).create();
+        showBlueDialog(dialog);
     }
 
     private void showResizeInfo() {
-        new AlertDialog.Builder(this).setTitle("Adattamento automatico")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Adattamento automatico")
                 .setMessage("Attivo: la schermata usa la larghezza disponibile, limita la larghezza massima sui display grandi e si adatta a orientamento e dimensioni dello schermo. L'attività supporta il ridimensionamento Android.")
-                .setPositiveButton("OK", null).show();
+                .setPositiveButton("OK", null).create();
+        showBlueDialog(dialog);
     }
 
     private void showPlaybackSettings() {
-        new AlertDialog.Builder(this).setTitle("Riproduzione")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Riproduzione")
                 .setMessage("Le impostazioni del motore di riproduzione restano quelle gestite da Fermata. Le opzioni avanzate saranno esposte qui quando collegate direttamente al player, senza controlli fittizi.")
                 .setPositiveButton("Apri riproduzione", (d, w) -> openFermataScreen(R.id.folders_fragment))
-                .setNegativeButton("Chiudi", null).show();
+                .setNegativeButton("Chiudi", null).create();
+        showBlueDialog(dialog);
     }
 
     private void showKodiSettings() {
@@ -258,7 +278,7 @@ public class HomeActivity extends AppCompatActivity {
                 .setNegativeButton("Chiudi", null)
                 .create();
         menu.setTag(dialog);
-        dialog.show();
+        showBlueDialog(dialog);
     }
 
     private LinearLayout createKodiSettingsMenu() {
@@ -322,7 +342,7 @@ public class HomeActivity extends AppCompatActivity {
         fields.addView(password, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Credenziali Kodi")
                 .setMessage("Inserisci le credenziali HTTP di Kodi. Lascia vuoti entrambi i campi se l'autenticazione è disattivata.")
                 .setView(fields)
@@ -337,7 +357,8 @@ public class HomeActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
                     }
                 })
-                .show();
+                .create();
+        showBlueDialog(dialog);
     }
 
     private void showKodiDiagnostics() {
@@ -361,7 +382,7 @@ public class HomeActivity extends AppCompatActivity {
                     showKodiDiagnostics();
                 })
                 .setNegativeButton("Chiudi", null).create();
-        dialog.show();
+        showBlueDialog(dialog);
     }
 
     private void testKodiConnection() {
@@ -388,11 +409,11 @@ public class HomeActivity extends AppCompatActivity {
             }
             final String message = resultMessage;
             final boolean connected = resultConnected;
-            runOnUiThread(() -> new AlertDialog.Builder(this)
+            runOnUiThread(() -> showBlueDialog(new AlertDialog.Builder(this)
                     .setTitle(connected ? "Kodi collegato" : "Kodi non raggiungibile")
                     .setMessage(message)
                     .setPositiveButton("OK", null)
-                    .show());
+                    .create()));
         }, "Kodi-connection-test").start();
     }
 
@@ -400,9 +421,10 @@ public class HomeActivity extends AppCompatActivity {
         String message = "Fermata Kodi Auto\n"
                 + "Versione: " + BuildConfig.VERSION_NAME + "\n"
                 + "Build: " + BuildConfig.VERSION_CODE;
-        new AlertDialog.Builder(this).setTitle("Informazioni")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Informazioni")
                 .setMessage(message)
-                .setPositiveButton("OK", null).show();
+                .setPositiveButton("OK", null).create();
+        showBlueDialog(dialog);
     }
 
     private void addSection(String title) {

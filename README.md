@@ -31,6 +31,9 @@ Questo è il ramo di lavoro per l'integrazione di Kodi come backend locale di Fe
 - Le voci film/episodio sono foglie selezionabili; la selezione invia `Player.Open` con `movieid` o `episodeid` a Kodi, che resta l'app player separata. Non viene creato un player Fermata fittizio.
 - Questa prima fase di browsing espone soltanto Film e Telefilm. Le categorie TV in diretta, Preferiti e Playlist non sono incluse nella Cartella Kodi di questa build: saranno aggiunte dopo aver implementato e verificato i rispettivi metodi JSON-RPC.
 
+### Interfaccia moderna – finestre blu
+- Le finestre delle sezioni Impostazioni, Dimensione interfaccia, Adattamento automatico, Riproduzione, Kodi, Credenziali, Diagnostica, Verifica collegamento e Informazioni condividono il pannello blu e i colori testuali/accento del menu Kodi.
+
 ### Browsing Kodi – TV, Preferiti e Playlist
 - TV in diretta carica i canali del primo gruppo PVR TV restituito da Kodi; la selezione invia `Player.Open` con `channelid`.
 - Preferiti carica le voci tramite `Favourites.GetFavourites`; apre i preferiti di tipo media o window.
