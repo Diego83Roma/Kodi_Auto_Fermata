@@ -205,3 +205,9 @@ If you like the application, please consider making a donation:
 [CloudTips](https://pay.cloudtips.ru/p/a03a73da)
 
 [Yandex Money](https://money.yandex.ru/to/410014661137336)
+
+
+### Correzione compilazione – Build APK #141 / tentativo successivo
+- La Build APK #141 si è fermata in compilazione Java per due errori in `HomeActivity.java`: ID del titolo del dialogo non risolto e nome del parametro lambda duplicato.
+- Corretti usando l'ID AppCompat del titolo e rinominando il parametro della callback Salva.
+- Le modifiche correttive sono state inviate sul ramo `kodi-backend-prototype`; la nuova compilazione GitHub Actions deve confermare il risultato prima di distribuire l'APK.
