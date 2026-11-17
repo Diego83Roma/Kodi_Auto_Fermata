@@ -381,8 +381,6 @@
     <string name="err_failed_to_download">Impossibile scaricare %1$s</string>
     <string name="err_no_audio_record_perm">Autorizzazione registrazione audio non concessa</string>
     <string name="kodi_backend">Kodi</string>
-    <string name="kodi_credentials_shortcut">Inserisci username e password Kodi</string>
-    <string name="kodi_credentials_shortcut_sub">Apri i campi per salvare le credenziali Kodi su questo telefono</string>
     <string name="kodi_connection_settings">Credenziali Kodi</string>
     <string name="kodi_connection_settings_sub">Imposta nome utente e password per Kodi su questo dispositivo</string>
     <string name="kodi_connection_local_info">Collegamento locale: 127.0.0.1:8080. Lascia vuoti i campi se l\'autenticazione HTTP di Kodi è disattivata.</string>

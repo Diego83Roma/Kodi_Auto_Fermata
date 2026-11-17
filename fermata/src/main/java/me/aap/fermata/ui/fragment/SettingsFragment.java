@@ -688,15 +688,14 @@ public class SettingsFragment extends MainActivityFragment
 
 		addAddons(set);
 
-		// Keep credential entry directly on the main Settings page so it cannot
-		// be overlooked inside the Kodi subsection (and is distinct from test/log actions).
-		set.addButton(o -> {
-			o.title = R.string.kodi_credentials_shortcut;
-			o.subtitle = R.string.kodi_credentials_shortcut_sub;
+		sub1 = set.subSet(o -> o.title = R.string.kodi_backend);
+		// Keep Kodi credentials inside Settings > Kodi, beside the connection
+		// check and diagnostics, rather than on the general Settings screen.
+		sub1.addButton(o -> {
+			o.title = R.string.kodi_connection_settings;
+			o.subtitle = R.string.kodi_connection_settings_sub;
 			o.onClick = () -> showKodiConnectionSettings(a.getContext());
 		});
-
-		sub1 = set.subSet(o -> o.title = R.string.kodi_backend);
 		sub1.addButton(o -> {
 			o.title = R.string.kodi_test_connection;
 			o.subtitle = R.string.kodi_test_connection_sub;
