@@ -58,14 +58,17 @@ public final class KodiFolderItem extends BrowsableItemBase {
 
     @Override
     protected FutureSupplier<String> buildSubtitle() {
-        return completed("Film e telefilm dalla libreria Kodi");
+        return completed("TV, film, serie TV, preferiti e playlist");
     }
 
     @Override
     protected FutureSupplier<List<Item>> listChildren() {
-        List<Item> items = new ArrayList<>(2);
+        List<Item> items = new ArrayList<>(5);
+        items.add(new KodiShortcutItem(this, KodiShortcutItem.TV));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.MOVIES));
         items.add(new KodiShortcutItem(this, KodiShortcutItem.TV_SHOWS));
+        items.add(new KodiShortcutItem(this, KodiShortcutItem.FAVORITES));
+        items.add(new KodiShortcutItem(this, KodiShortcutItem.PLAYLISTS));
         return completed(items);
     }
 
