@@ -70,6 +70,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
@@ -88,6 +90,7 @@ import android.text.TextUtils;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.annotation.Nullable;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.AudioFocusRequestCompat;
@@ -461,6 +464,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlay() {
 		if (kodiShortcutMediaId != null) {
+			KodiDiagnostics.info("Comando Play ricevuto da Android Auto per " + kodiShortcutMediaId);
+			setPlaybackState(new PlaybackStateCompat.Builder()
+						.setActions(ACTION_PLAY | ACTION_STOP)
+						.setState(STATE_CONNECTING, 0, 0f)
+						.build());
 			openKodiShortcut(kodiShortcutMediaId);
 			return;
 		}
@@ -509,6 +517,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = playFromMediaId(mediaId, extras);
 	}
 
+	private Bitmap createKodiShortcutArtwork() {
+		final int size = 256;
+		Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+		Canvas canvas = new Canvas(bitmap);
+		Drawable icon = AppCompatResources.getDrawable(service, R.drawable.video);
+		if (icon != null) {
+			int inset = 28;
+			icon.setBounds(inset, inset, size - inset, size - inset);
+			icon.draw(canvas);
+		}
+		return bitmap;
+	}
+
 	private void openKodiShortcut(String mediaId) {
 		String window = KodiShortcutItem.getWindow(mediaId);
 		String path = KodiShortcutItem.getPath(mediaId);
@@ -554,6 +575,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			try {
 				client.activateWindow(window, path);
 				KodiDiagnostics.info("Aperta sezione Kodi da Android Auto: " + mediaId);
+				handler.post(() -> {
+					if (mediaId.equals(kodiShortcutMediaId)) {
+						setPlaybackState(new PlaybackStateCompat.Builder()
+								.setActions(ACTION_PLAY | ACTION_STOP)
+								.setState(STATE_PAUSED, 0, 0f)
+								.build());
+					}
+				});
 			} catch (Exception e) {
 				KodiDiagnostics.error("Navigazione Kodi da Android Auto non riuscita", e);
 			}
@@ -570,6 +599,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
 						.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
 						.putString(METADATA_KEY_DISPLAY_TITLE, title)
+						.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createKodiShortcutArtwork())
+						.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, createKodiShortcutArtwork())
 						.build());
 				PlaybackStateCompat state = new PlaybackStateCompat.Builder()
 						.setActions(ACTION_PLAY | ACTION_STOP)
