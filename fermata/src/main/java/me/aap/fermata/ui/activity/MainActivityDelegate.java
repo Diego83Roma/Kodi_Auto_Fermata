@@ -285,6 +285,17 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
+		// Android Auto may deliver the shortcut while MainActivity is already open
+		// (singleTop). Route the fragment extra here as well as during initial creation.
+		if (intent.hasExtra("kodiauto.open_fragment")) {
+			int fragmentId = intent.getIntExtra("kodiauto.open_fragment", ID_NULL);
+			if (fragmentId != ID_NULL) {
+				Log.i("Opening requested Fermata fragment from new intent: ", fragmentId);
+				showFragment(fragmentId);
+				return completed(true);
+			}
+		}
+
 		if (INTENT_ACTION_FINISH.equals(intent.getAction())) {
 			finish();
 			return completed(true);
