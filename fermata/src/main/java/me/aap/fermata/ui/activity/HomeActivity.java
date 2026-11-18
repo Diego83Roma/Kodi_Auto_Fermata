@@ -2,6 +2,7 @@ package me.aap.fermata.ui.activity;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.graphics.Color;
@@ -152,13 +153,30 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void openBuiltInAddon(int fragmentId) {
-        openFermataScreen(fragmentId);
+        String target = fragmentId == R.id.youtube_fragment ? "youtube"
+                : fragmentId == R.id.web_browser_fragment ? "browser" : null;
+        if (target != null) {
+            openFermataScreen(fragmentId, Uri.parse("kodiauto://open/" + target));
+        } else {
+            openFermataScreen(fragmentId, null);
+        }
     }
 
     private void openFermataScreen(int fragmentId) {
+        openFermataScreen(fragmentId, null);
+    }
+
+    private void openFermataScreen(int fragmentId, Uri shortcutUri) {
         Intent intent = new Intent(this, MainActivity.class);
+        if (shortcutUri != null) {
+            intent.setAction(Intent.ACTION_VIEW);
+            intent.setData(shortcutUri);
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+        }
         intent.putExtra("kodiauto.open_fragment", fragmentId);
         intent.putExtra("kodiauto.modern_host", true);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
 
