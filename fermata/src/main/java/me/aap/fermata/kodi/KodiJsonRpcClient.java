@@ -208,17 +208,41 @@ public final class KodiJsonRpcClient {
         return call("Favourites.GetFavourites", new JSONObject()).optJSONArray("favourites");
     }
     public JSONArray getTvChannels() throws IOException, JSONException {
+        JSONArray merged = new JSONArray();
+        java.util.HashSet<Integer> seenChannelIds = new java.util.HashSet<>();
+
+        // First test Kodi's built-in all-TV group using the minimal property set
+        // suggested for diagnosing the Invalid params response.
+        JSONObject allTvParams = new JSONObject().put("channelgroupid", "alltv")
+                .put("properties", new JSONArray().put("thumbnail")
+                        .put("channeltype").put("hidden"));
+        try {
+            JSONArray channels = call("PVR.GetChannels", allTvParams).optJSONArray("channels");
+            if (channels != null) {
+                for (int i = 0; i < channels.length(); i++) {
+                    JSONObject channel = channels.optJSONObject(i);
+                    if (channel == null) continue;
+                    int channelId = channel.optInt("channelid", -1);
+                    if (channelId < 0 || !seenChannelIds.add(channelId)) continue;
+                    merged.put(channel);
+                }
+            }
+            KodiDiagnostics.info("Kodi PVR: PVR.GetChannels alltv (parametri minimi) -> "
+                    + merged.length() + " canali");
+            return merged;
+        } catch (KodiRpcException e) {
+            KodiDiagnostics.error("Kodi PVR: chiamata alltv con parametri minimi non accettata; "
+                    + "provo i gruppi numerici", e);
+        }
+
         JSONObject groupParams = new JSONObject().put("channeltype", "tv")
                 .put("limits", new JSONObject().put("start", 0).put("end", 500));
         JSONArray groups = call("PVR.GetChannelGroups", groupParams).optJSONArray("channelgroups");
-        JSONArray merged = new JSONArray();
-        java.util.HashSet<Integer> seenChannelIds = new java.util.HashSet<>();
         if (groups == null || groups.length() == 0) {
             KodiDiagnostics.info("Kodi PVR: nessun gruppo TV restituito da PVR.GetChannelGroups");
             return merged;
         }
         KodiDiagnostics.info("Kodi PVR: gruppi TV trovati " + groups.length());
-        final int pageSize = 500;
         for (int g = 0; g < groups.length(); g++) {
             JSONObject group = groups.optJSONObject(g);
             if (group == null) continue;
@@ -228,14 +252,12 @@ public final class KodiJsonRpcClient {
                 KodiDiagnostics.info("Kodi PVR: gruppo senza ID valido: " + groupName);
                 continue;
             }
+            JSONObject params = new JSONObject().put("channelgroupid", groupId)
+                    .put("properties", new JSONArray().put("channelid").put("thumbnail")
+                            .put("channeltype").put("hidden"));
+            JSONArray channels = call("PVR.GetChannels", params).optJSONArray("channels");
             int groupCount = 0;
-            for (int start = 0, page = 0; page < 20; start += pageSize, page++) {
-                JSONObject params = new JSONObject().put("channelgroupid", groupId)
-                        .put("properties", new JSONArray().put("channel").put("channelid")
-                                .put("channelnumber").put("thumbnail").put("channeltype"))
-                        .put("limits", new JSONObject().put("start", start).put("end", start + pageSize));
-                JSONArray channels = call("PVR.GetChannels", params).optJSONArray("channels");
-                if (channels == null || channels.length() == 0) break;
+            if (channels != null) {
                 for (int i = 0; i < channels.length(); i++) {
                     JSONObject channel = channels.optJSONObject(i);
                     if (channel == null) continue;
@@ -244,7 +266,6 @@ public final class KodiJsonRpcClient {
                     merged.put(channel);
                     groupCount++;
                 }
-                if (channels.length() < pageSize) break;
             }
             KodiDiagnostics.info("Kodi PVR: gruppo '" + groupName + "' (ID " + groupId
                     + ") -> " + groupCount + " canali unici");
