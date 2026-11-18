@@ -208,12 +208,49 @@ public final class KodiJsonRpcClient {
         return call("Favourites.GetFavourites", new JSONObject()).optJSONArray("favourites");
     }
     public JSONArray getTvChannels() throws IOException, JSONException {
-        JSONArray groups=call("PVR.GetChannelGroups",new JSONObject().put("channeltype","tv")).optJSONArray("channelgroups");
-        if(groups==null||groups.length()==0)return new JSONArray();
-        int id=groups.optJSONObject(0).optInt("channelgroupid",-1); if(id<0)return new JSONArray();
-        JSONObject p=new JSONObject().put("channelgroupid",id).put("properties",
-                new JSONArray().put("channel").put("channelid").put("channelnumber").put("thumbnail"));
-        return call("PVR.GetChannels",p).optJSONArray("channels");
+        JSONObject groupParams = new JSONObject().put("channeltype", "tv")
+                .put("limits", new JSONObject().put("start", 0).put("end", 500));
+        JSONArray groups = call("PVR.GetChannelGroups", groupParams).optJSONArray("channelgroups");
+        JSONArray merged = new JSONArray();
+        java.util.HashSet<Integer> seenChannelIds = new java.util.HashSet<>();
+        if (groups == null || groups.length() == 0) {
+            KodiDiagnostics.info("Kodi PVR: nessun gruppo TV restituito da PVR.GetChannelGroups");
+            return merged;
+        }
+        KodiDiagnostics.info("Kodi PVR: gruppi TV trovati " + groups.length());
+        final int pageSize = 500;
+        for (int g = 0; g < groups.length(); g++) {
+            JSONObject group = groups.optJSONObject(g);
+            if (group == null) continue;
+            int groupId = group.optInt("channelgroupid", -1);
+            String groupName = group.optString("label", group.optString("name", "Gruppo " + groupId));
+            if (groupId < 0) {
+                KodiDiagnostics.info("Kodi PVR: gruppo senza ID valido: " + groupName);
+                continue;
+            }
+            int groupCount = 0;
+            for (int start = 0, page = 0; page < 20; start += pageSize, page++) {
+                JSONObject params = new JSONObject().put("channelgroupid", groupId)
+                        .put("properties", new JSONArray().put("channel").put("channelid")
+                                .put("channelnumber").put("thumbnail").put("channeltype"))
+                        .put("limits", new JSONObject().put("start", start).put("end", start + pageSize));
+                JSONArray channels = call("PVR.GetChannels", params).optJSONArray("channels");
+                if (channels == null || channels.length() == 0) break;
+                for (int i = 0; i < channels.length(); i++) {
+                    JSONObject channel = channels.optJSONObject(i);
+                    if (channel == null) continue;
+                    int channelId = channel.optInt("channelid", -1);
+                    if (channelId < 0 || !seenChannelIds.add(channelId)) continue;
+                    merged.put(channel);
+                    groupCount++;
+                }
+                if (channels.length() < pageSize) break;
+            }
+            KodiDiagnostics.info("Kodi PVR: gruppo '" + groupName + "' (ID " + groupId
+                    + ") -> " + groupCount + " canali unici");
+        }
+        KodiDiagnostics.info("Kodi PVR: totale canali TV unici " + merged.length());
+        return merged;
     }
     public JSONArray getVideoPlaylists() throws IOException, JSONException {
         JSONObject p=new JSONObject().put("directory","special://videoplaylists/").put("media","files")

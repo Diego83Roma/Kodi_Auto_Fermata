@@ -6,6 +6,8 @@ import static me.aap.utils.async.Completed.completedNull;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import android.support.v4.media.MediaBrowserCompat.MediaItem;
+import android.support.v4.media.MediaDescriptionCompat;
 
 import me.aap.fermata.R;
 import me.aap.utils.async.FutureSupplier;
@@ -29,6 +31,12 @@ public final class BuiltinAddonItem extends ExtRoot {
         } else {
             throw new IllegalArgumentException("Unsupported built-in addon: " + id);
         }
+    }
+
+    /** Android Auto should execute these shortcuts rather than browse an empty folder. */
+    @Override
+    public FutureSupplier<MediaItem> asMediaItem() {
+        return getMediaDescription().map(md -> new MediaItem(md, MediaItem.FLAG_PLAYABLE));
     }
 
     @Override

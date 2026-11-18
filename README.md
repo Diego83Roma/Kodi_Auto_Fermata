@@ -219,3 +219,10 @@ If you like the application, please consider making a donation:
 - Nella **Cartella Kodi**, spostata la voce **Collegamento Kodi** al primo posto, prima di TV, Film, Telefilm, Preferiti e Playlist, così da poter verificare la connessione prima di entrare nelle sezioni Kodi.
 - Nessuna modifica alle schermate moderne del telefono, all'ordine delle prime tre voci Android Auto o al player.
 - Compilazione e test Android Auto da verificare; la build verde conferma soltanto la compilazione, non il comportamento in auto.
+
+
+### Correzioni Android Auto – ripartenza dalla Build APK #144
+- Ripristinato il ramo operativo alla base esatta della Build #144 (commit `5ba303f1a7de96128923d84665cc1471b7c6a006`), scartando i tentativi #145/#146.
+- YouTube e Browser sono ora azioni MediaBrowser **PLAYABLE**, non cartelle BROWSABLE vuote. Selezionandole in Android Auto il servizio apre Fermata con il fragment originale YouTube o Browser via extra `kodiauto.open_fragment`; non cambia la UI moderna.
+- Kodi TV: `PVR.GetChannelGroups` usa limiti; `PVR.GetChannels` interroga ogni gruppo con paginazione (500 per pagina, massimo 10.000 per gruppo) e unisce i canali deduplicando per `channelid`. Diagnostica registra gruppi, ID e conteggio per gruppo, più totale.
+- L'ordine root Android Auto e il player non vengono modificati. Build verde è solo compilazione; test in auto resta necessario.

@@ -714,6 +714,25 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
+        if (BuiltinAddonItem.YOUTUBE.equals(mediaId) || BuiltinAddonItem.BROWSER.equals(mediaId)) {
+            return onStop(false).then(v -> {
+                Intent launchIntent = service.getPackageManager().getLaunchIntentForPackage(service.getPackageName());
+                if (launchIntent == null) {
+                    setKodiError("Impossibile aprire Fermata per " + mediaId);
+                    return completedVoid();
+                }
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                launchIntent.putExtra("kodiauto.open_fragment",
+                        BuiltinAddonItem.YOUTUBE.equals(mediaId) ? R.id.youtube_fragment : R.id.web_browser_fragment);
+                try {
+                    service.startActivity(launchIntent);
+                } catch (Exception e) {
+                    setKodiError("Apertura " + mediaId + " non riuscita: " + e.getMessage());
+                }
+                return completedVoid();
+            });
+        }
+
 		if (KodiMediaItem.isId(kodiShortcutMediaId) && !mediaId.equals(kodiShortcutMediaId)) {
 			controlKodiPlayer("stop");
 		}
