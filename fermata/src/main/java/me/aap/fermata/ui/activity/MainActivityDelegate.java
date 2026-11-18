@@ -285,14 +285,36 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
+		Log.i("Fermata shortcut intent received: action=", intent.getAction(),
+				", data=", intent.getData(), ", fragmentExtra=",
+				intent.getIntExtra("kodiauto.open_fragment", ID_NULL));
+
+		// Route browsable shortcut URIs independently of activity lifecycle timing.
+		Uri shortcutUri = intent.getData();
+		if ((shortcutUri != null) && "kodiauto".equals(shortcutUri.getScheme())
+				&& "open".equals(shortcutUri.getHost())) {
+			String target = shortcutUri.getLastPathSegment();
+			int targetId = "youtube".equals(target) ? R.id.youtube_fragment
+						: "browser".equals(target) ? R.id.web_browser_fragment : ID_NULL;
+			if (targetId != ID_NULL) {
+				Log.i("Routing browsable shortcut to fragment: ", target, " (", targetId, ")");
+				ActivityFragment opened = showFragment(targetId);
+				if (opened != null) return completed(true);
+				Log.e("Browsable shortcut fragment could not be opened: ", targetId);
+				return completed(false);
+			}
+		}
+
 		// Android Auto may deliver the shortcut while MainActivity is already open
 		// (singleTop). Route the fragment extra here as well as during initial creation.
 		if (intent.hasExtra("kodiauto.open_fragment")) {
 			int fragmentId = intent.getIntExtra("kodiauto.open_fragment", ID_NULL);
 			if (fragmentId != ID_NULL) {
-				Log.i("Opening requested Fermata fragment from new intent: ", fragmentId);
-				showFragment(fragmentId);
-				return completed(true);
+				Log.i("Opening requested Fermata fragment from shortcut intent: ", fragmentId);
+				ActivityFragment opened = showFragment(fragmentId);
+				if (opened != null) return completed(true);
+				Log.e("Shortcut fragment could not be opened: ", fragmentId);
+				return completed(false);
 			}
 		}
 
