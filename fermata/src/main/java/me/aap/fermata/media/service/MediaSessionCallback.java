@@ -717,14 +717,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
         if (BuiltinAddonItem.YOUTUBE.equals(mediaId) || BuiltinAddonItem.BROWSER.equals(mediaId)) {
             return onStop(false).then(v -> {
-                Intent launchIntent = service.getPackageManager().getLaunchIntentForPackage(service.getPackageName());
-                if (launchIntent == null) {
-                    setKodiError("Impossibile aprire Fermata per " + mediaId);
-                    return completedVoid();
-                }
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                launchIntent.putExtra("kodiauto.open_fragment",
-                        BuiltinAddonItem.YOUTUBE.equals(mediaId) ? R.id.youtube_fragment : R.id.web_browser_fragment);
+                int fragmentId = BuiltinAddonItem.YOUTUBE.equals(mediaId)
+                        ? R.id.youtube_fragment : R.id.web_browser_fragment;
+                String target = BuiltinAddonItem.YOUTUBE.equals(mediaId) ? "youtube" : "browser";
+                Intent launchIntent = new Intent(service, me.aap.fermata.ui.activity.MainActivity.class);
+                launchIntent.setAction(Intent.ACTION_VIEW);
+                launchIntent.setData(Uri.parse("kodiauto://open/" + target));
+                launchIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                launchIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+                launchIntent.putExtra("kodiauto.open_fragment", fragmentId);
+                launchIntent.putExtra("kodiauto.modern_host", true);
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 try {
                     service.startActivity(launchIntent);
                 } catch (Exception e) {
