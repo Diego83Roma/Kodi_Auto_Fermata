@@ -222,7 +222,12 @@ If you like the application, please consider making a donation:
 
 
 ### Correzioni Android Auto – ripartenza dalla Build APK #144
-- Ripristinato il ramo operativo alla base esatta della Build #144 (commit `5ba303f1a7de96128923d84665cc1471b7c6a006`), scartando i tentativi #145/#146.
+- Ripristinato il ramo operativo alla base esatta della Build #144 (commit `5ba303f1a7de96128923d84665cc1471b7c6a006`).
 - YouTube e Browser sono ora azioni MediaBrowser **PLAYABLE**, non cartelle BROWSABLE vuote. Selezionandole in Android Auto il servizio apre Fermata con il fragment originale YouTube o Browser via extra `kodiauto.open_fragment`; non cambia la UI moderna.
 - Kodi TV: `PVR.GetChannelGroups` usa limiti; `PVR.GetChannels` interroga ogni gruppo con paginazione (500 per pagina, massimo 10.000 per gruppo) e unisce i canali deduplicando per `channelid`. Diagnostica registra gruppi, ID e conteggio per gruppo, più totale.
 - L'ordine root Android Auto e il player non vengono modificati. Build verde è solo compilazione; test in auto resta necessario.
+
+
+### Fix compilazione – build successiva
+- Risolto l'import mancante di `BuiltinAddonItem` in `MediaSessionCallback`, che impediva la compilazione Java.
+- Aggiornato il README senza riferimenti ai tentativi intermedi non validi.

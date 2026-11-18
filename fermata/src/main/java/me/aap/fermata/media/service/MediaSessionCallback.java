@@ -117,6 +117,7 @@ import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.BuiltinAddonItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
