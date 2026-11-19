@@ -9,8 +9,19 @@ android {
     productFlavors {
         auto { dimension "version" }
     }
+    signingConfigs {
+        release {
+            storeFile file(localProps["storeFile"])
+            storePassword localProps["storePassword"]
+            keyAlias localProps["keyAlias"]
+            keyPassword localProps["keyPassword"]
+        }
+    }
     buildTypes {
-        release { minifyEnabled false }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
         debug { applicationIdSuffix '.debug' }
     }
 }
