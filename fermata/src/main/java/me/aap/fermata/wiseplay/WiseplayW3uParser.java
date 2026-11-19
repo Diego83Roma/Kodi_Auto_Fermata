@@ -75,10 +75,23 @@ public final class WiseplayW3uParser {
         boolean host = json.optBoolean("isHost", false);
 
         List<Item> children = new ArrayList<>();
-        JSONArray nested = json.optJSONArray("stations");
-        if (nested != null) {
-            for (int i = 0; i < nested.length(); i++) {
-                JSONObject child = nested.optJSONObject(i);
+        // Wiseplay lists can nest both category groups and stations. Keep the
+        // original order within each array and preserve the distinction so the
+        // browser can render nested categories separately from playable entries.
+        JSONArray nestedGroups = json.optJSONArray("groups");
+        if (nestedGroups != null) {
+            for (int i = 0; i < nestedGroups.length(); i++) {
+                JSONObject child = nestedGroups.optJSONObject(i);
+                if (child != null) {
+                    children.add(parseItem(child, true, depth + 1, counter));
+                }
+            }
+        }
+
+        JSONArray nestedStations = json.optJSONArray("stations");
+        if (nestedStations != null) {
+            for (int i = 0; i < nestedStations.length(); i++) {
+                JSONObject child = nestedStations.optJSONObject(i);
                 if (child != null) {
                     children.add(parseItem(child, false, depth + 1, counter));
                 }
