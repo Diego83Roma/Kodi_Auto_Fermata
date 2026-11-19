@@ -23,7 +23,6 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.function.IntSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.fermata.wiseplay.WiseplayW3uParser;
@@ -32,7 +31,6 @@ public class WiseplayRootItem extends BrowsableItemBase implements WiseplayItem 
     public static final String ID = "WISEPLAY";
     public static final String DEFAULT_SOURCE = "https://bit.ly/wise_mandra";
     private static final int MAX_BYTES = 15 * 1024 * 1024;
-    private static final Pref<IntSupplier> SOURCE_VERSION = Pref.i("SOURCE_VERSION", 0).withInheritance(false);
     private final DefaultMediaLib lib;
 
     WiseplayRootItem(DefaultMediaLib lib) {
