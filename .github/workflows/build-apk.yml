@@ -35,7 +35,7 @@ jobs:
 
       - name: Export vars
         env:
-          APP_NAME: ${{ vars.APP_NAME }}
+          APP_NAME: Fermata Auto
           APP_ID_SFX: ${{ vars.APP_ID_SFX }}
           ARTIFACT_SFX: ${{ vars.ARTIFACT_SFX }}
         run: |
