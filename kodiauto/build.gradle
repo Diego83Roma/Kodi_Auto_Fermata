@@ -1,0 +1,21 @@
+android {
+    namespace = 'me.aap.kodiauto'
+    defaultConfig {
+        applicationId 'me.aap.kodiauto'
+        versionCode 1
+        versionName '1.0'
+    }
+    flavorDimensions += "version"
+    productFlavors {
+        auto { dimension "version" }
+    }
+    buildTypes {
+        release { minifyEnabled false }
+        debug { applicationIdSuffix '.debug' }
+    }
+}
+dependencies {
+    implementation libs.androidxMedia
+    implementation libs.androidxCore
+    implementation libs.media3Exoplayer
+}
