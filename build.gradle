@@ -57,7 +57,7 @@ allprojects {
 subprojects {
     def isDynFeature = false
 
-    if ('fermata'.equals(name)) {
+    if ('fermata'.equals(name) || 'kodiauto'.equals(name)) {
         apply plugin: 'com.android.application'
     } else if (gradle.ext.modules.contains(':' + name)) {
         isDynFeature = true
