@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addon_name_wiseplay">Wiseplay</string>
+    <string name="module_name_wiseplay" translatable="false">Wiseplay</string>
 </resources>
