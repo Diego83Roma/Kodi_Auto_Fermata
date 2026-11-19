@@ -44,7 +44,7 @@ public class WiseplayAddon implements MediaLibAddon {
     }
 
     @Override
-    public Item getRootItem(DefaultMediaLib lib) {
+    public WiseplayRootItem getRootItem(DefaultMediaLib lib) {
         if ((root == null) || (root.getLib() != lib)) root = new WiseplayRootItem(lib);
         return root;
     }
