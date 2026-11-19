@@ -755,17 +755,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 		if (KodiMediaItem.isId(mediaId)) {
 			return onStop(false).then(v -> {
+				// Kodi owns the video playback session. Do not advertise this as a
+				// Fermata audio session to Android Auto (which otherwise opens the
+				// generic music player for an externally playing Kodi movie).
 				kodiShortcutMediaId = mediaId;
-				session.setActive(true);
-				String title = "Riproduci con Kodi";
-				setMetadata(new MediaMetadataCompat.Builder()
-						.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaId)
-						.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
-						.putString(METADATA_KEY_DISPLAY_TITLE, title)
-						.build());
+				session.setActive(false);
+				setMetadata(null);
 				setPlaybackState(new PlaybackStateCompat.Builder()
-						.setActions(ACTION_PLAY | ACTION_STOP)
-						.setState(STATE_CONNECTING, 0, 0f).build());
+						.setState(STATE_NONE, 0, 0f).build());
 				playKodiMediaItem(mediaId);
 				return completedVoid();
 			});
