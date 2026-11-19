@@ -1,0 +1,24 @@
+android {
+    namespace = "me.aap.fermata.addon.wiseplay"
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [[
+            name : 'wiseplay',
+            icon : 'tv',
+            class: 'me.aap.fermata.addon.wiseplay.WiseplayAddon',
+            order: 2
+    ]]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation libs.androidxMedia
+    implementation libs.androidxAppcompat
+    implementation libs.androidMaterial
+}
