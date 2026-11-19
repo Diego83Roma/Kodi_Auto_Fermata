@@ -119,6 +119,9 @@ jobs:
           mv $out/*.apk dist/arm64/
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a "${ARGS[@]}"
           mv $out/*.apk dist/arm/
+          ./gradlew kodiauto:assembleAutoRelease "${ARGS[@]}"
+          mkdir -p dist/kodiauto
+          cp kodiauto/build/outputs/apk/auto/release/*.apk dist/kodiauto/kodi-auto.apk
 
       - name: Upload arm64 APK
         uses: actions/upload-artifact@v4
@@ -133,5 +136,13 @@ jobs:
         with:
           name: fermata-auto-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-arm
           path: dist/arm/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Kodi Auto APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kodi-auto-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}
+          path: dist/kodiauto/*.apk
           retention-days: 30
           if-no-files-found: error
